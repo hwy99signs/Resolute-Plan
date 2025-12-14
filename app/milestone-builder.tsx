@@ -208,7 +208,12 @@ export default function MilestoneBuilder() {
         </Text>
       </View>
 
-      <ScrollView style={styles.content}>
+      <ScrollView 
+        style={styles.content}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
         <View style={styles.milestonesList}>
           {milestones.map((milestone, index) => (
             <View 
@@ -456,7 +461,10 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
+  },
+  scrollContent: {
     padding: 24,
+    paddingBottom: 40,
   },
   milestonesList: {
     marginBottom: 24,

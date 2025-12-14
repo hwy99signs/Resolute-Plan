@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, Image, ActivityIndicator, Alert, Platform, ActionSheetIOS, Modal } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { Pencil, Calendar, Target, TrendingUp, Trophy, ChevronRight, Crown, Camera, Bell, FileText, Share2, BookOpen, Settings, LogOut, Image as ImageIcon } from 'lucide-react-native';
+import { Pencil, Calendar, Target, TrendingUp, Trophy, ChevronRight, Crown, Camera, Bell, FileText, Share2, BookOpen, Settings, LogOut, Image as ImageIcon, ArrowLeft } from 'lucide-react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { useTheme } from '../src/contexts/ThemeContext';
 import { useAuth } from '../src/contexts/AuthContext';
@@ -19,6 +19,7 @@ export default function ProfileScreen() {
   const { colors } = useTheme();
   const { t } = useLanguage();
   const { user, profile: userProfile, updateProfile, refreshProfile, signOut } = useAuth();
+  const insets = useSafeAreaInsets();
   const [uploading, setUploading] = useState(false);
   const [showImageSuccessModal, setShowImageSuccessModal] = useState(false);
   const [showSignOutConfirm, setShowSignOutConfirm] = useState(false);
@@ -407,11 +408,11 @@ export default function ProfileScreen() {
 
       {/* Floating Back Button */}
       <TouchableOpacity 
-        style={styles.backButton}
+        style={[styles.backButton, { top: Math.max(insets.top + 16, 60) }]}
         onPress={() => router.back()}
         activeOpacity={0.8}
       >
-        <Text style={styles.backButtonText}>←</Text>
+        <ArrowLeft size={24} color="#FFFFFF" />
       </TouchableOpacity>
       
       <BottomTabBar />
@@ -729,11 +730,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 4,
     elevation: 4,
-  },
-  backButtonText: {
-    color: '#FFFFFF',
-    fontSize: 24,
-    fontWeight: 'bold',
+    zIndex: 10,
   },
   menuCard: {
     flexDirection: 'row',

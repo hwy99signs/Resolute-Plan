@@ -1,5 +1,12 @@
 import { supabase } from '../lib/supabase';
 
+export interface JournalMedia {
+  type: 'image' | 'video' | 'document';
+  url: string;
+  name: string;
+  thumbnail?: string; // For videos
+}
+
 export interface JournalEntry {
   id: string;
   user_id: string;
@@ -8,6 +15,7 @@ export interface JournalEntry {
   title?: string;
   mood?: string;
   thoughts: string;
+  media?: JournalMedia[];
   created_at: string;
   updated_at: string;
 }
@@ -19,6 +27,7 @@ export interface JournalEntryInsert {
   title?: string;
   mood?: string;
   thoughts: string;
+  media?: JournalMedia[];
 }
 
 export class JournalService {

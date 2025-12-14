@@ -1,17 +1,22 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, Alert, ActivityIndicator, Modal } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, Alert, ActivityIndicator, Modal, Image, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { ArrowLeft, Plus, BookOpen, Calendar, Edit, Trash2, X, Share2 } from 'lucide-react-native';
+import { ArrowLeft, Plus, BookOpen, Calendar, Edit, Trash2, X, Share2, Camera, Image as ImageIcon, FileText, Video, XCircle } from 'lucide-react-native';
 import { useTheme } from '../src/contexts/ThemeContext';
 import { useAuth } from '../src/contexts/AuthContext';
 import { useLanguage } from '../src/contexts/LanguageContext';
-import { JournalService, type JournalEntry } from '../src/services/journal.service';
+import { JournalService, type JournalEntry, type JournalMedia } from '../src/services/journal.service';
 import { useResolves } from '../src/hooks/useResolves';
 import { translateResolveName } from '../src/utils/translations';
 import BottomTabBar from '../src/components/BottomTabBar';
 import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
+import * as ImagePicker from 'expo-image-picker';
+import * as DocumentPicker from 'expo-document-picker';
+import * as FileSystem from 'expo-file-system';
+import * as FileSystemLegacy from 'expo-file-system/legacy';
+import { StorageService } from '../src/services/storage.service';
 
 export default function JournalScreen() {
   const router = useRouter();
@@ -29,6 +34,10 @@ export default function JournalScreen() {
   const [mood, setMood] = useState('');
   const [thoughts, setThoughts] = useState('');
   const [saving, setSaving] = useState(false);
+  const [media, setMedia] = useState<JournalMedia[]>([]);
+  const [uploadingMedia, setUploadingMedia] = useState(false);
+  const [showMediaPicker, setShowMediaPicker] = useState(false);
+  const [mediaUploadProgress, setMediaUploadProgress] = useState<Record<number, number>>({});
 
   useEffect(() => {
     if (user) {
@@ -51,6 +60,170 @@ export default function JournalScreen() {
     }
   };
 
+  const uploadMediaFiles = async (entryId: string) => {
+    if (!user || media.length === 0) return;
+
+    try {
+      setUploadingMedia(true);
+      const uploadedMedia: JournalMedia[] = [];
+      const mediaToUpload = media.filter(item => item.url && item.url.startsWith('file://'));
+      
+      // Initialize progress for all files to upload
+      const progressMap: Record<number, number> = {};
+      mediaToUpload.forEach((_, index) => {
+        const originalIndex = media.findIndex(m => m === mediaToUpload[index]);
+        progressMap[originalIndex] = 0;
+      });
+      setMediaUploadProgress(progressMap);
+
+      for (let i = 0; i < media.length; i++) {
+        const mediaItem = media[i];
+        
+        // If media already has a URL (from editing), skip upload
+        if (mediaItem.url && mediaItem.url.startsWith('http')) {
+          uploadedMedia.push(mediaItem);
+          continue;
+        }
+
+        // Upload new media
+        if (mediaItem.url && mediaItem.url.startsWith('file://')) {
+          const mimeType = mediaItem.type === 'image' ? 'image/jpeg' :
+                          mediaItem.type === 'video' ? 'video/mp4' :
+                          'application/octet-stream';
+          
+          // Simulate progress updates during upload (smooth progress)
+          let currentProgress = 0;
+          const progressInterval = setInterval(() => {
+            currentProgress = Math.min(currentProgress + Math.random() * 15 + 5, 85); // Increment randomly up to 85%
+            setMediaUploadProgress(prev => ({
+              ...prev,
+              [i]: Math.floor(currentProgress),
+            }));
+          }, 300);
+
+          try {
+            const uploadedUrl = await StorageService.uploadJournalMedia(
+              user.id,
+              entryId,
+              mediaItem.url,
+              mediaItem.name,
+              mimeType
+            );
+
+            clearInterval(progressInterval);
+            setMediaUploadProgress(prev => ({ ...prev, [i]: 100 }));
+
+            uploadedMedia.push({
+              ...mediaItem,
+              url: uploadedUrl,
+            });
+          } catch (error) {
+            clearInterval(progressInterval);
+            setMediaUploadProgress(prev => ({ ...prev, [i]: 0 }));
+            throw error;
+          }
+        }
+      }
+
+      // Update entry with uploaded media URLs
+      if (uploadedMedia.length > 0) {
+        await JournalService.updateEntry(entryId, { media: uploadedMedia });
+        setMedia(uploadedMedia);
+      }
+
+      // Clear progress after a short delay
+      setTimeout(() => {
+        setMediaUploadProgress({});
+      }, 500);
+    } catch (error) {
+      console.error('Error uploading media:', error);
+      Alert.alert('Error', 'Failed to upload some media files');
+      setMediaUploadProgress({});
+    } finally {
+      setUploadingMedia(false);
+    }
+  };
+
+  const handlePickImage = async (source: 'camera' | 'gallery') => {
+    if (!user) return;
+
+    try {
+      let result: ImagePicker.ImagePickerResult;
+
+      if (source === 'camera') {
+        const { status } = await ImagePicker.requestCameraPermissionsAsync();
+        if (status !== 'granted') {
+          Alert.alert('Permission Required', 'Please grant camera permissions to take a photo');
+          return;
+        }
+
+        result = await ImagePicker.launchCameraAsync({
+          mediaTypes: ['images', 'videos'],
+          allowsEditing: true,
+          quality: 0.8,
+          videoMaxDuration: 60, // 60 seconds max
+        });
+      } else {
+        const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+        if (status !== 'granted') {
+          Alert.alert('Permission Required', 'Please grant media library permissions');
+          return;
+        }
+
+        result = await ImagePicker.launchImageLibraryAsync({
+          mediaTypes: ['images', 'videos'],
+          allowsEditing: true,
+          quality: 0.8,
+          videoMaxDuration: 60,
+        });
+      }
+
+      if (!result.canceled && result.assets[0]) {
+        const asset = result.assets[0];
+        const mediaType = asset.type === 'video' ? 'video' : 'image';
+        const fileName = asset.fileName || `${Date.now()}.${mediaType === 'video' ? 'mp4' : 'jpg'}`;
+
+        setMedia([...media, {
+          type: mediaType,
+          url: asset.uri,
+          name: fileName,
+          thumbnail: asset.type === 'video' ? asset.uri : undefined,
+        }]);
+      }
+    } catch (error) {
+      console.error('Error picking media:', error);
+      Alert.alert('Error', 'Failed to pick media');
+    }
+    setShowMediaPicker(false);
+  };
+
+  const handlePickDocument = async () => {
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        type: ['application/pdf', 'application/msword', 'text/plain', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'],
+        copyToCacheDirectory: true,
+      });
+
+      if (!result.canceled && result.assets[0]) {
+        const asset = result.assets[0];
+        setMedia([...media, {
+          type: 'document',
+          url: asset.uri,
+          name: asset.name,
+        }]);
+      }
+    } catch (error) {
+      console.error('Error picking document:', error);
+      Alert.alert('Error', 'Failed to pick document');
+    }
+    setShowMediaPicker(false);
+  };
+
+  const handleRemoveMedia = (index: number) => {
+    const newMedia = media.filter((_, i) => i !== index);
+    setMedia(newMedia);
+  };
+
   const handleSaveEntry = async () => {
     if (!user || !thoughts.trim()) {
       Alert.alert('Error', 'Please write your thoughts');
@@ -59,6 +232,8 @@ export default function JournalScreen() {
 
     try {
       setSaving(true);
+      
+      let entryId: string;
       
       if (editingEntry) {
         await JournalService.updateEntry(editingEntry.id, {
@@ -69,8 +244,9 @@ export default function JournalScreen() {
           mood: mood || undefined,
           thoughts: thoughts.trim(),
         });
+        entryId = editingEntry.id;
       } else {
-        await JournalService.createEntry({
+        const newEntry = await JournalService.createEntry({
           user_id: user.id,
           pakt_id: selectedPaktId || undefined,
           date: entryDate,
@@ -78,6 +254,13 @@ export default function JournalScreen() {
           mood: mood || undefined,
           thoughts: thoughts.trim(),
         });
+        entryId = newEntry.id;
+      }
+      
+      // Upload media files after entry is created/updated
+      if (media.length > 0) {
+        // Keep saving state true while uploading media
+        await uploadMediaFiles(entryId);
       }
 
       setShowEntryModal(false);
@@ -121,6 +304,7 @@ export default function JournalScreen() {
     setTitle(entry.title || '');
     setMood(entry.mood || '');
     setThoughts(entry.thoughts);
+    setMedia(entry.media || []);
     setShowEntryModal(true);
   };
 
@@ -131,6 +315,7 @@ export default function JournalScreen() {
     setTitle('');
     setMood('');
     setThoughts('');
+    setMedia([]);
   };
 
   const openNewEntry = () => {
@@ -144,13 +329,168 @@ export default function JournalScreen() {
     return Resolve?.name;
   };
 
-  const generateJournalPDFHTML = (entry: JournalEntry): string => {
+  // Helper function to convert image URL to base64 data URI
+  const convertImageToBase64 = async (url: string): Promise<string | null> => {
+    try {
+      if (url.startsWith('data:')) {
+        return url; // Already a data URI
+      }
+
+      if (Platform.OS === 'web') {
+        // For web, fetch and convert to base64
+        const response = await fetch(url);
+        const blob = await response.blob();
+        return new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result as string);
+          reader.onerror = reject;
+          reader.readAsDataURL(blob);
+        });
+      } else {
+        // For native, use FileSystem
+        if (url.startsWith('file://')) {
+          // Try legacy API first (for consistency with storage service)
+          try {
+            const base64 = await FileSystemLegacy.readAsStringAsync(url, {
+              encoding: FileSystemLegacy.EncodingType.Base64,
+            });
+            // Determine MIME type from file extension
+            const ext = url.split('.').pop()?.toLowerCase();
+            const mimeTypes: Record<string, string> = {
+              jpg: 'image/jpeg',
+              jpeg: 'image/jpeg',
+              png: 'image/png',
+              gif: 'image/gif',
+              webp: 'image/webp',
+            };
+            const mimeType = mimeTypes[ext || ''] || 'image/jpeg';
+            return `data:${mimeType};base64,${base64}`;
+          } catch (legacyError) {
+            // Fallback to new API if legacy fails
+            try {
+              // Try with EncodingType if available, otherwise use string
+              const encoding = (FileSystem.EncodingType as any)?.Base64 || 'base64';
+              const base64 = await FileSystem.readAsStringAsync(url, {
+                encoding: encoding as any,
+              });
+              const ext = url.split('.').pop()?.toLowerCase();
+              const mimeTypes: Record<string, string> = {
+                jpg: 'image/jpeg',
+                jpeg: 'image/jpeg',
+                png: 'image/png',
+                gif: 'image/gif',
+                webp: 'image/webp',
+              };
+              const mimeType = mimeTypes[ext || ''] || 'image/jpeg';
+              return `data:${mimeType};base64,${base64}`;
+            } catch (error) {
+              console.error('Error reading file:', error);
+              return null;
+            }
+          }
+        } else {
+          // For remote URLs, download first
+          const downloadResult = await FileSystem.downloadAsync(
+            url,
+            FileSystem.documentDirectory + `temp_${Date.now()}.jpg`
+          );
+          if (downloadResult.uri) {
+            try {
+              const base64 = await FileSystemLegacy.readAsStringAsync(downloadResult.uri, {
+                encoding: FileSystemLegacy.EncodingType.Base64,
+              });
+              // Clean up temp file
+              await FileSystem.deleteAsync(downloadResult.uri, { idempotent: true });
+              return `data:image/jpeg;base64,${base64}`;
+            } catch (legacyError) {
+              try {
+                const encoding = (FileSystem.EncodingType as any)?.Base64 || 'base64';
+                const base64 = await FileSystem.readAsStringAsync(downloadResult.uri, {
+                  encoding: encoding as any,
+                });
+                await FileSystem.deleteAsync(downloadResult.uri, { idempotent: true });
+                return `data:image/jpeg;base64,${base64}`;
+              } catch (error) {
+                // Clean up temp file even on error
+                await FileSystem.deleteAsync(downloadResult.uri, { idempotent: true }).catch(() => {});
+                return null;
+              }
+            }
+          }
+        }
+      }
+      return null;
+    } catch (error) {
+      console.error('Error converting image to base64:', error);
+      return null;
+    }
+  };
+
+  const generateJournalPDFHTML = async (entry: JournalEntry): Promise<string> => {
     const entryDate = new Date(entry.date).toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'long',
       day: 'numeric'
     });
     const paktName = entry.pakt_id ? getPaktName(entry.pakt_id) : null;
+
+    // Process media for PDF
+    let mediaHTML = '';
+    if (entry.media && entry.media.length > 0) {
+      const mediaItems = await Promise.all(
+        entry.media.map(async (mediaItem) => {
+          if (mediaItem.type === 'image') {
+            const base64Data = await convertImageToBase64(mediaItem.url);
+            if (base64Data) {
+              return `
+                <div class="media-item">
+                  <div class="media-label">Image: ${mediaItem.name}</div>
+                  <img src="${base64Data}" alt="${mediaItem.name}" class="media-image" />
+                </div>
+              `;
+            } else {
+              return `
+                <div class="media-item">
+                  <div class="media-label">Image: ${mediaItem.name}</div>
+                  <div class="media-placeholder">Image could not be loaded</div>
+                </div>
+              `;
+            }
+          } else if (mediaItem.type === 'video') {
+            return `
+              <div class="media-item">
+                <div class="media-label">Video: ${mediaItem.name}</div>
+                <div class="media-placeholder">
+                  <div class="media-icon">🎥</div>
+                  <div>Video attachment: ${mediaItem.name}</div>
+                  ${mediaItem.url ? `<div class="media-link">URL: ${mediaItem.url}</div>` : ''}
+                </div>
+              </div>
+            `;
+          } else if (mediaItem.type === 'document') {
+            return `
+              <div class="media-item">
+                <div class="media-label">Document: ${mediaItem.name}</div>
+                <div class="media-placeholder">
+                  <div class="media-icon">📄</div>
+                  <div>Document attachment: ${mediaItem.name}</div>
+                  ${mediaItem.url ? `<div class="media-link">URL: ${mediaItem.url}</div>` : ''}
+                </div>
+              </div>
+            `;
+          }
+          return '';
+        })
+      );
+      mediaHTML = `
+        <div class="media-section">
+          <h3 class="media-section-title">Attachments</h3>
+          <div class="media-container">
+            ${mediaItems.join('')}
+          </div>
+        </div>
+      `;
+    }
 
     return `
       <!DOCTYPE html>
@@ -202,6 +542,7 @@ export default function JournalScreen() {
               line-height: 1.8;
               color: #374151;
               white-space: pre-wrap;
+              margin-bottom: 30px;
             }
             .tag {
               display: inline-block;
@@ -212,6 +553,59 @@ export default function JournalScreen() {
               font-size: 12px;
               font-weight: 600;
               margin-bottom: 15px;
+            }
+            .media-section {
+              margin-top: 40px;
+              page-break-inside: avoid;
+            }
+            .media-section-title {
+              font-size: 20px;
+              font-weight: bold;
+              color: #1f2937;
+              margin-bottom: 20px;
+              border-top: 2px solid #e5e7eb;
+              padding-top: 20px;
+            }
+            .media-container {
+              display: flex;
+              flex-direction: column;
+              gap: 20px;
+            }
+            .media-item {
+              page-break-inside: avoid;
+              margin-bottom: 20px;
+            }
+            .media-label {
+              font-size: 14px;
+              font-weight: 600;
+              color: #4b5563;
+              margin-bottom: 10px;
+            }
+            .media-image {
+              max-width: 100%;
+              height: auto;
+              border-radius: 8px;
+              box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+              page-break-inside: avoid;
+            }
+            .media-placeholder {
+              background-color: #f3f4f6;
+              border: 2px dashed #d1d5db;
+              border-radius: 8px;
+              padding: 30px;
+              text-align: center;
+              color: #6b7280;
+              page-break-inside: avoid;
+            }
+            .media-icon {
+              font-size: 48px;
+              margin-bottom: 10px;
+            }
+            .media-link {
+              font-size: 12px;
+              color: #6366f1;
+              margin-top: 10px;
+              word-break: break-all;
             }
           </style>
         </head>
@@ -227,6 +621,7 @@ export default function JournalScreen() {
           ${entry.mood ? `<div class="mood">${entry.mood}</div>` : ''}
           <div class="content">
             <div class="thoughts">${entry.thoughts}</div>
+            ${mediaHTML}
           </div>
         </body>
       </html>
@@ -235,7 +630,7 @@ export default function JournalScreen() {
 
   const handleShareJournal = async (entry: JournalEntry) => {
     try {
-      const html = generateJournalPDFHTML(entry);
+      const html = await generateJournalPDFHTML(entry);
       
       const { uri } = await Print.printToFileAsync({
         html,
@@ -252,7 +647,7 @@ export default function JournalScreen() {
       }
     } catch (error) {
       console.error('Error sharing journal:', error);
-      Alert.alert('Error', 'Failed to share journal entry');
+      Alert.alert('Error', 'Failed to share journal entry. Some media may not be included if it could not be loaded.');
     }
   };
 
@@ -343,6 +738,32 @@ export default function JournalScreen() {
 
                 {entry.mood && (
                   <Text style={styles.moodEmoji}>{entry.mood}</Text>
+                )}
+
+                {entry.media && entry.media.length > 0 && (
+                  <View style={styles.mediaContainer}>
+                    {entry.media.map((mediaItem, index) => (
+                      <View key={index} style={styles.mediaItem}>
+                        {mediaItem.type === 'image' && (
+                          <Image source={{ uri: mediaItem.url }} style={styles.mediaImage} />
+                        )}
+                        {mediaItem.type === 'video' && (
+                          <View style={styles.mediaVideoContainer}>
+                            <Video size={24} color={colors.primary} />
+                            <Text style={[styles.mediaName, { color: colors.text }]} numberOfLines={2}>
+                              {mediaItem.name}
+                            </Text>
+                          </View>
+                        )}
+                        {mediaItem.type === 'document' && (
+                          <View style={styles.mediaDocumentContainer}>
+                            <FileText size={24} color={colors.primary} />
+                            <Text style={[styles.mediaName, { color: colors.text }]}>{mediaItem.name}</Text>
+                          </View>
+                        )}
+                      </View>
+                    ))}
+                  </View>
                 )}
 
                 <Text style={[styles.entryThoughts, { color: colors.text }]}>{entry.thoughts}</Text>
@@ -465,6 +886,115 @@ export default function JournalScreen() {
                 </ScrollView>
               </View>
 
+              {/* Media */}
+              <View style={styles.formGroup}>
+                <View style={styles.mediaHeader}>
+                  <Text style={[styles.label, { color: colors.text }]}>Media (Optional)</Text>
+                  <TouchableOpacity
+                    onPress={() => setShowMediaPicker(true)}
+                    style={[styles.addMediaButton, { backgroundColor: colors.primary }]}
+                  >
+                    <Plus size={16} color="#FFFFFF" />
+                    <Text style={styles.addMediaButtonText}>Add</Text>
+                  </TouchableOpacity>
+                </View>
+
+                {media.length > 0 && (
+                  <View style={styles.mediaPreviewContainer}>
+                    {media.map((mediaItem, index) => {
+                      const uploadProgress = mediaUploadProgress[index];
+                      const isUploading = uploadProgress !== undefined && uploadProgress < 100 && uploadProgress > 0;
+                      const isLocalFile = mediaItem.url && mediaItem.url.startsWith('file://');
+                      const isUploaded = mediaItem.url && mediaItem.url.startsWith('http');
+                      
+                      return (
+                        <View key={index} style={styles.mediaPreviewItem}>
+                          <View style={styles.mediaPreviewContent}>
+                            {mediaItem.type === 'image' && (
+                              <Image 
+                                source={{ uri: mediaItem.url }} 
+                                style={[
+                                  styles.mediaPreviewImage,
+                                  isUploading && styles.mediaPreviewImageUploading
+                                ]} 
+                              />
+                            )}
+                            {(mediaItem.type === 'video' || mediaItem.type === 'document') && (
+                              <View style={[
+                                styles.mediaPreviewIcon, 
+                                { backgroundColor: colors.background },
+                                isUploading && styles.mediaPreviewIconUploading
+                              ]}>
+                                {mediaItem.type === 'video' ? (
+                                  <Video size={20} color={colors.primary} />
+                                ) : (
+                                  <FileText size={20} color={colors.primary} />
+                                )}
+                              </View>
+                            )}
+                            
+                            {/* Upload Progress Overlay */}
+                            {isUploading && (
+                              <View style={styles.uploadProgressOverlay}>
+                                <View style={styles.uploadProgressContainer}>
+                                  <ActivityIndicator size="small" color="#FFFFFF" />
+                                  <Text style={styles.uploadProgressText}>
+                                    {uploadProgress}%
+                                  </Text>
+                                </View>
+                                <View style={styles.uploadProgressBarContainer}>
+                                  <View style={[styles.uploadProgressBar, { width: `${uploadProgress}%` }]} />
+                                </View>
+                              </View>
+                            )}
+                            
+                            {/* Upload Complete Indicator */}
+                            {!isUploading && isLocalFile && uploadProgress === 100 && (
+                              <View style={styles.uploadCompleteOverlay}>
+                                <View style={styles.uploadCompleteBadge}>
+                                  <Text style={styles.uploadCompleteText}>✓</Text>
+                                </View>
+                              </View>
+                            )}
+                            
+                            {/* Already Uploaded Indicator */}
+                            {isUploaded && !isUploading && (
+                              <View style={styles.uploadCompleteOverlay}>
+                                <View style={[styles.uploadCompleteBadge, { backgroundColor: '#2196F3' }]}>
+                                  <Text style={styles.uploadCompleteText}>✓</Text>
+                                </View>
+                              </View>
+                            )}
+                          </View>
+                          
+                          <Text style={[styles.mediaPreviewName, { color: colors.text }]} numberOfLines={1}>
+                            {mediaItem.name}
+                          </Text>
+                          
+                          {!isUploading && (
+                            <TouchableOpacity
+                              onPress={() => handleRemoveMedia(index)}
+                              style={styles.removeMediaButton}
+                            >
+                              <XCircle size={18} color="#FF6B6B" />
+                            </TouchableOpacity>
+                          )}
+                        </View>
+                      );
+                    })}
+                  </View>
+                )}
+                
+                {uploadingMedia && (
+                  <View style={styles.uploadingIndicator}>
+                    <ActivityIndicator size="small" color={colors.primary} />
+                    <Text style={[styles.uploadingText, { color: colors.textSecondary }]}>
+                      Uploading media...
+                    </Text>
+                  </View>
+                )}
+              </View>
+
               {/* Thoughts */}
               <View style={styles.formGroup}>
                 <Text style={[styles.label, { color: colors.text }]}>{t('journal.thoughts')}</Text>
@@ -495,6 +1025,51 @@ export default function JournalScreen() {
                 <Text style={styles.saveButtonText}>{t('journal.saveEntry')}</Text>
               )}
             </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Media Picker Modal */}
+      <Modal
+        visible={showMediaPicker}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowMediaPicker(false)}
+      >
+        <View style={styles.mediaPickerOverlay}>
+          <View style={[styles.mediaPickerContent, { backgroundColor: colors.surface }]}>
+            <View style={styles.mediaPickerHeader}>
+              <Text style={[styles.mediaPickerTitle, { color: colors.text }]}>Add Media</Text>
+              <TouchableOpacity onPress={() => setShowMediaPicker(false)}>
+                <X size={24} color={colors.text} />
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.mediaPickerOptions}>
+              <TouchableOpacity
+                style={[styles.mediaPickerOption, { backgroundColor: colors.background }]}
+                onPress={() => handlePickImage('camera')}
+              >
+                <Camera size={32} color={colors.primary} />
+                <Text style={[styles.mediaPickerOptionText, { color: colors.text }]}>Take Photo</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.mediaPickerOption, { backgroundColor: colors.background }]}
+                onPress={() => handlePickImage('gallery')}
+              >
+                <ImageIcon size={32} color={colors.primary} />
+                <Text style={[styles.mediaPickerOptionText, { color: colors.text }]}>Choose from Gallery</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.mediaPickerOption, { backgroundColor: colors.background }]}
+                onPress={handlePickDocument}
+              >
+                <FileText size={32} color={colors.primary} />
+                <Text style={[styles.mediaPickerOptionText, { color: colors.text }]}>Choose Document</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
       </Modal>
@@ -708,5 +1283,210 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '600',
+  },
+  mediaContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+    marginBottom: 12,
+  },
+  mediaItem: {
+    borderRadius: 12,
+    overflow: 'hidden',
+  },
+  mediaImage: {
+    width: 100,
+    height: 100,
+    borderRadius: 12,
+  },
+  mediaVideoContainer: {
+    width: 100,
+    height: 100,
+    borderRadius: 12,
+    backgroundColor: '#F3F4F6',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+  },
+  mediaDocumentContainer: {
+    width: 100,
+    height: 100,
+    borderRadius: 12,
+    backgroundColor: '#F3F4F6',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+  },
+  mediaName: {
+    fontSize: 10,
+    textAlign: 'center',
+    paddingHorizontal: 4,
+  },
+  mediaHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  addMediaButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+    gap: 4,
+  },
+  addMediaButtonText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  mediaPreviewContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+    marginTop: 8,
+  },
+  mediaPreviewItem: {
+    width: 80,
+    alignItems: 'center',
+    position: 'relative',
+  },
+  mediaPreviewImage: {
+    width: 80,
+    height: 80,
+    borderRadius: 8,
+  },
+  mediaPreviewImageUploading: {
+    opacity: 0.7,
+  },
+  mediaPreviewIcon: {
+    width: 80,
+    height: 80,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  mediaPreviewIconUploading: {
+    opacity: 0.7,
+  },
+  mediaPreviewName: {
+    fontSize: 10,
+    marginTop: 4,
+    textAlign: 'center',
+  },
+  removeMediaButton: {
+    position: 'absolute',
+    top: -4,
+    right: -4,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+  },
+  mediaPreviewContent: {
+    position: 'relative',
+    width: 80,
+    height: 80,
+  },
+  uploadProgressOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1,
+  },
+  uploadProgressContainer: {
+    alignItems: 'center',
+    gap: 4,
+  },
+  uploadProgressText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  uploadProgressBarContainer: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 4,
+    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+    borderBottomLeftRadius: 8,
+    borderBottomRightRadius: 8,
+    overflow: 'hidden',
+  },
+  uploadProgressBar: {
+    height: '100%',
+    backgroundColor: '#4CAF50',
+    transition: 'width 0.3s ease',
+  },
+  uploadCompleteOverlay: {
+    position: 'absolute',
+    top: 4,
+    right: 4,
+    zIndex: 1,
+  },
+  uploadCompleteBadge: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: '#4CAF50',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  uploadCompleteText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: 'bold',
+  },
+  uploadingIndicator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 12,
+    padding: 12,
+    borderRadius: 8,
+    backgroundColor: '#F3F4F6',
+  },
+  uploadingText: {
+    fontSize: 14,
+  },
+  mediaPickerOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  mediaPickerContent: {
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    padding: 24,
+  },
+  mediaPickerHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  mediaPickerTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+  },
+  mediaPickerOptions: {
+    gap: 16,
+  },
+  mediaPickerOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    borderRadius: 12,
+    gap: 12,
+  },
+  mediaPickerOptionText: {
+    fontSize: 16,
+    fontWeight: '500',
   },
 });

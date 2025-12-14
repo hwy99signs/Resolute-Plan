@@ -136,8 +136,8 @@ export default function EditPaktScreen() {
     fetch('http://127.0.0.1:7242/ingest/6d153e82-0f01-42bb-8769-6bca51679f09',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'edit-pakt.tsx:119',message:'handleEditMilestone entry',data:{milestoneId:milestone.id,milestoneName:milestone.name,due_date:milestone.due_date,due_dateType:typeof milestone.due_date,notes:milestone.notes,hasAllProps:!!(milestone.id&&milestone.name&&milestone.due_date)},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
     // #endregion
     try {
-      setEditingMilestone(milestone);
-      setMilestoneName(milestone.name);
+    setEditingMilestone(milestone);
+    setMilestoneName(milestone.name);
       // #region agent log
       fetch('http://127.0.0.1:7242/ingest/6d153e82-0f01-42bb-8769-6bca51679f09',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'edit-pakt.tsx:123',message:'Before date parsing',data:{due_date:milestone.due_date,due_dateValid:!!milestone.due_date},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
       // #endregion
@@ -146,11 +146,11 @@ export default function EditPaktScreen() {
       fetch('http://127.0.0.1:7242/ingest/6d153e82-0f01-42bb-8769-6bca51679f09',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'edit-pakt.tsx:125',message:'After date parsing',data:{parsedDate:parsedDate.toISOString(),isValid:!isNaN(parsedDate.getTime())},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
       // #endregion
       setMilestoneDueDate(parsedDate);
-      setMilestoneNotes(milestone.notes || '');
+    setMilestoneNotes(milestone.notes || '');
       // #region agent log
       fetch('http://127.0.0.1:7242/ingest/6d153e82-0f01-42bb-8769-6bca51679f09',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'edit-pakt.tsx:128',message:'Before opening modal',data:{showMilestoneModal:false},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
       // #endregion
-      setShowMilestoneModal(true);
+    setShowMilestoneModal(true);
       // #region agent log
       fetch('http://127.0.0.1:7242/ingest/6d153e82-0f01-42bb-8769-6bca51679f09',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'edit-pakt.tsx:130',message:'After opening modal',data:{showMilestoneModal:true},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
       // #endregion

@@ -269,19 +269,19 @@ export default function DailyScreen() {
             paddingHorizontal: headerPadding,
             paddingTop: headerPadding,
             paddingBottom: headerPadding,
-            backgroundColor: colors.surface,
+            backgroundColor: colors.primary,
           }
         ]}
       >
         <Animated.Text 
           style={[
             styles.headerTitle,
-            { fontSize: titleFontSize, color: colors.text }
+            { fontSize: titleFontSize, color: '#FFFFFF' }
           ]}
         >
           {t('daily.title')}
         </Animated.Text>
-        <Text style={[styles.headerSubtitle, { color: colors.textSecondary }]}>
+        <Text style={[styles.headerSubtitle, { color: 'rgba(255, 255, 255, 0.9)' }]}>
           {DAY_NAMES[currentDay]}, {formatDate(today)}
         </Text>
       </Animated.View>

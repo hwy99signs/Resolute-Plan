@@ -213,6 +213,7 @@ export default function WelcomeScreen() {
         <ScrollView 
           contentContainerStyle={styles.scrollContent} 
           showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
         >
           {/* Logo/Target Icon */}
           <Animated.View 
@@ -563,10 +564,9 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   scrollContent: {
-    flexGrow: 1,
     paddingHorizontal: 24,
     paddingTop: 48,
-    paddingBottom: 48,
+    paddingBottom: 80,
     alignItems: 'center',
     maxWidth: 448,
     width: '100%',

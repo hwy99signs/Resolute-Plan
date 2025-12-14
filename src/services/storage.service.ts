@@ -181,4 +181,142 @@ export class StorageService {
       throw error;
     }
   }
+
+  /**
+   * Check if the journal-media bucket exists
+   */
+  private static async ensureJournalMediaBucketExists(): Promise<void> {
+    try {
+      const { data, error } = await supabase.storage.from('journal-media').list('', {
+        limit: 1,
+      });
+
+      if (error && (error.message?.includes('not found') || error?.statusCode === 404)) {
+        console.warn('Journal media bucket not found. Please create it in Supabase dashboard.');
+        throw new Error('Storage bucket not configured. Please contact support or check Supabase storage setup.');
+      }
+    } catch (error: any) {
+      if (error.message?.includes('Storage bucket not configured')) {
+        throw error;
+      }
+      console.log('Bucket check:', error.message);
+    }
+  }
+
+  /**
+   * Upload journal media (image, video, or document) to Supabase storage
+   * @param userId - The user's ID
+   * @param entryId - The journal entry ID
+   * @param fileUri - The local URI of the file to upload
+   * @param fileName - The name of the file
+   * @param mimeType - The MIME type of the file
+   * @returns The public URL of the uploaded file
+   */
+  static async uploadJournalMedia(
+    userId: string,
+    entryId: string,
+    fileUri: string,
+    fileName: string,
+    mimeType: string
+  ): Promise<string> {
+    try {
+      await this.ensureJournalMediaBucketExists();
+
+      let fileData: Blob | Uint8Array;
+
+      if (Platform.OS === 'web') {
+        const response = await fetch(fileUri);
+        fileData = await response.blob();
+      } else {
+        try {
+          const response = await fetch(fileUri);
+          if (response.ok) {
+            const blob = await response.blob();
+            const arrayBuffer = await blob.arrayBuffer();
+            fileData = new Uint8Array(arrayBuffer);
+          } else {
+            throw new Error('Failed to fetch file');
+          }
+        } catch (fetchError) {
+          const base64 = await FileSystemLegacy.readAsStringAsync(fileUri, {
+            encoding: FileSystemLegacy.EncodingType.Base64,
+          });
+          const byteCharacters = atob(base64);
+          const byteNumbers = new Array(byteCharacters.length);
+          for (let i = 0; i < byteCharacters.length; i++) {
+            byteNumbers[i] = byteCharacters.charCodeAt(i);
+          }
+          fileData = new Uint8Array(byteNumbers);
+        }
+      }
+
+      // Create file path: {userId}/{entryId}/{timestamp}_{fileName}
+      const timestamp = Date.now();
+      const sanitizedFileName = fileName.replace(/[^a-zA-Z0-9.-]/g, '_');
+      const filePath = `${userId}/${entryId}/${timestamp}_${sanitizedFileName}`;
+
+      // Upload to Supabase storage
+      const { data, error } = await supabase.storage
+        .from('journal-media')
+        .upload(filePath, fileData, {
+          contentType: mimeType,
+          upsert: false,
+          cacheControl: '3600',
+        });
+
+      if (error) {
+        console.error('Storage upload error:', error);
+        if (error.message?.includes('not found') || error.statusCode === 404) {
+          throw new Error('Storage bucket not found. Please create the "journal-media" bucket in Supabase Dashboard > Storage. See JOURNAL_MEDIA_FIX.md for instructions.');
+        } else if (error.message?.includes('permission') || error.message?.includes('policy') || error.message?.includes('denied')) {
+          throw new Error('Permission denied. Please ensure: 1) The "journal-media" bucket exists and is public, 2) Storage policies are set up (run migration 032_create_journal_media_bucket.sql). See JOURNAL_MEDIA_FIX.md for details.');
+        } else if (error.message?.includes('size') || error.message?.includes('too large')) {
+          throw new Error('File is too large. Maximum size is 50MB.');
+        } else {
+          throw new Error(`Upload failed: ${error.message || 'Unknown error'}`);
+        }
+      }
+
+      if (!data) {
+        throw new Error('Upload failed: No data returned from storage');
+      }
+
+      // Get the public URL
+      const { data: urlData } = supabase.storage
+        .from('journal-media')
+        .getPublicUrl(filePath);
+
+      if (!urlData?.publicUrl) {
+        throw new Error('Failed to get public URL for uploaded file');
+      }
+
+      return urlData.publicUrl;
+    } catch (error: any) {
+      console.error('Error in uploadJournalMedia:', error);
+      throw new Error(error.message || 'Failed to upload media. Please check your internet connection and try again.');
+    }
+  }
+
+  /**
+   * Delete journal media from Supabase storage
+   * @param mediaUrl - The public URL of the media to delete
+   */
+  static async deleteJournalMedia(mediaUrl: string): Promise<void> {
+    try {
+      const urlParts = mediaUrl.split('/');
+      const filePath = urlParts.slice(urlParts.indexOf('journal-media') + 1).join('/');
+
+      const { error } = await supabase.storage
+        .from('journal-media')
+        .remove([filePath]);
+
+      if (error) {
+        console.error('Error deleting media:', error);
+        throw error;
+      }
+    } catch (error) {
+      console.error('Error in deleteJournalMedia:', error);
+      throw error;
+    }
+  }
 }

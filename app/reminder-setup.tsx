@@ -153,7 +153,12 @@ export default function ReminderSetup() {
         <Text style={[styles.subtitle, { color: colors.textSecondary }]}>Stay on track with smart notifications</Text>
       </View>
 
-      <ScrollView style={styles.content}>
+      <ScrollView 
+        style={styles.content}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
         <View style={[styles.toggleSection, { backgroundColor: colors.surface }]}>
           <View style={styles.toggleHeader}>
             <Text style={[styles.toggleTitle, { color: colors.text }]}>Enable Reminders</Text>
@@ -336,7 +341,10 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
+  },
+  scrollContent: {
     padding: 24,
+    paddingBottom: 40,
   },
   toggleSection: {
     backgroundColor: '#FFFFFF',

@@ -787,8 +787,8 @@ export default function PaktDetailScreen() {
 
       <DeleteConfirmationModal
         visible={showDeleteConfirm}
-        title={t('resolve.deletePakt')}
-        message={t('resolve.deleteConfirmMessage', { paktName: Resolve?.name || '' })}
+        title={t('resolve.deleteResolve')}
+        message={t('resolve.deleteConfirmMessage', { resolveName: Resolve?.name || '' })}
         cancelText={t('common.cancel')}
         deleteText={t('resolve.delete')}
         onCancel={() => setShowDeleteConfirm(false)}

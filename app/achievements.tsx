@@ -1,6 +1,6 @@
 import React, { useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Dimensions, ActivityIndicator, Animated } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { ArrowLeft, Target, Flame, Trophy, TrendingUp, Star, Award, Lock } from 'lucide-react-native';
 import { useAchievements } from '../src/hooks/useAchievements';
@@ -17,6 +17,7 @@ export default function AchievementScreen() {
   const { achievements, loading } = useAchievements();
   const { colors } = useTheme();
   const { t } = useLanguage();
+  const insets = useSafeAreaInsets();
 
   // Get screen width for responsive calculations
   const screenWidth = Dimensions.get('window').width;
@@ -205,26 +206,39 @@ export default function AchievementScreen() {
           }
         ]}
       >
-        <TouchableOpacity 
-          style={styles.backButton}
-          onPress={() => router.back()}
+        <Animated.View
+          style={[
+            styles.backButtonContainer,
+            {
+              top: Animated.add(
+                headerPadding,
+                new Animated.Value(Math.max(insets.top - 8, 0))
+              ),
+              left: headerPadding,
+            }
+          ]}
         >
-          <Animated.View
-            style={{
-              width: backButtonSize,
-              height: backButtonSize,
-              borderRadius: backButtonSize.interpolate({
-                inputRange: [36, 40],
-                outputRange: [18, 20],
-              }),
-              backgroundColor: 'rgba(255, 255, 255, 0.2)',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
+          <TouchableOpacity 
+            onPress={() => router.back()}
+            activeOpacity={0.7}
           >
-            <ArrowLeft size={getIconSize(24)} color="#FFFFFF" />
-          </Animated.View>
-        </TouchableOpacity>
+            <Animated.View
+              style={{
+                width: backButtonSize,
+                height: backButtonSize,
+                borderRadius: backButtonSize.interpolate({
+                  inputRange: [36, 40],
+                  outputRange: [18, 20],
+                }),
+                backgroundColor: 'rgba(255, 255, 255, 0.2)',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <ArrowLeft size={getIconSize(24)} color="#FFFFFF" />
+            </Animated.View>
+          </TouchableOpacity>
+        </Animated.View>
         
         <View style={styles.headerContent}>
           <Animated.Text 
@@ -463,10 +477,8 @@ const styles = StyleSheet.create({
     right: 0,
     zIndex: 10,
   },
-  backButton: {
+  backButtonContainer: {
     position: 'absolute',
-    top: rp(16),
-    left: rp(24),
     zIndex: 10,
   },
   headerContent: {
