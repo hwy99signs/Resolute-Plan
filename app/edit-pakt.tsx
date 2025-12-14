@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { ArrowLeft, Calendar, Save, Trash2, Plus, X, Edit2 } from 'lucide-react-native';
 // import DateTimePicker from '@react-native-community/datetimepicker';
-import { PaktService } from '../src/services/resolve.service';
+import { ResolveService } from '../src/services/resolve.service';
 import { MilestoneService } from '../src/services/milestone.service';
 import { useTheme } from '../src/contexts/ThemeContext';
 import { useLanguage } from '../src/contexts/LanguageContext';
@@ -57,19 +57,34 @@ export default function EditPaktScreen() {
   const loadPakt = async () => {
     try {
       setLoading(true);
-      const Resolve = await PaktService.getPakt(paktId as string);
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/6d153e82-0f01-42bb-8769-6bca51679f09',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'edit-pakt.tsx:59',message:'loadPakt entry',data:{paktId},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+      // #endregion
+      const Resolve = await ResolveService.getResolve(paktId as string);
+      // #region agent log
+        fetch('http://127.0.0.1:7242/ingest/6d153e82-0f01-42bb-8769-6bca51679f09',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'edit-pakt.tsx:61',message:'ResolveService.getResolve result',data:{Resolve:Resolve?{id:Resolve.id,name:Resolve.name}:null,hasResolve:!!Resolve},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+      // #endregion
       if (Resolve) {
-        setPaktName(resolve.name);
-        setDescription(resolve.description);
-        setTargetOutcome(resolve.target_outcome);
-        setDeadline(new Date(resolve.deadline));
-        setCategory(resolve.category);
+        // #region agent log
+        fetch('http://127.0.0.1:7242/ingest/6d153e82-0f01-42bb-8769-6bca51679f09',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'edit-pakt.tsx:63',message:'Before accessing Resolve properties',data:{ResolveExists:!!Resolve},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+        // #endregion
+        setPaktName(Resolve.name);
+        setDescription(Resolve.description);
+        setTargetOutcome(Resolve.target_outcome);
+        setDeadline(new Date(Resolve.deadline));
+        setCategory(Resolve.category);
         
         // Load milestones
         const paktMilestones = await MilestoneService.getPaktMilestones(paktId as string);
+        // #region agent log
+        fetch('http://127.0.0.1:7242/ingest/6d153e82-0f01-42bb-8769-6bca51679f09',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'edit-pakt.tsx:70',message:'Milestones loaded',data:{milestoneCount:paktMilestones.length,milestones:paktMilestones.map(m=>({id:m.id,name:m.name,due_date:m.due_date,notes:m.notes}))},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+        // #endregion
         setMilestones(paktMilestones.sort((a, b) => (a.order_index || 0) - (b.order_index || 0)));
       }
     } catch (error) {
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/6d153e82-0f01-42bb-8769-6bca51679f09',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'edit-pakt.tsx:73',message:'loadPakt error',data:{error:error instanceof Error?error.message:String(error),stack:error instanceof Error?error.stack:undefined},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+      // #endregion
       console.error('Error loading Resolve:', error);
       Alert.alert('Error', 'Failed to load Resolve');
     } finally {
@@ -86,7 +101,7 @@ export default function EditPaktScreen() {
     try {
       setSaving(true);
       // Update Resolve
-      await PaktService.updatePakt(paktId as string, {
+      await ResolveService.updateResolve(paktId as string, {
         name: paktName.trim(),
         description: description.trim(),
         target_outcome: targetOutcome.trim() || description.trim(),
@@ -117,11 +132,35 @@ export default function EditPaktScreen() {
   };
 
   const handleEditMilestone = (milestone: Milestone) => {
-    setEditingMilestone(milestone);
-    setMilestoneName(milestone.name);
-    setMilestoneDueDate(new Date(milestone.due_date));
-    setMilestoneNotes(milestone.notes || '');
-    setShowMilestoneModal(true);
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/6d153e82-0f01-42bb-8769-6bca51679f09',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'edit-pakt.tsx:119',message:'handleEditMilestone entry',data:{milestoneId:milestone.id,milestoneName:milestone.name,due_date:milestone.due_date,due_dateType:typeof milestone.due_date,notes:milestone.notes,hasAllProps:!!(milestone.id&&milestone.name&&milestone.due_date)},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+    // #endregion
+    try {
+      setEditingMilestone(milestone);
+      setMilestoneName(milestone.name);
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/6d153e82-0f01-42bb-8769-6bca51679f09',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'edit-pakt.tsx:123',message:'Before date parsing',data:{due_date:milestone.due_date,due_dateValid:!!milestone.due_date},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
+      // #endregion
+      const parsedDate = new Date(milestone.due_date);
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/6d153e82-0f01-42bb-8769-6bca51679f09',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'edit-pakt.tsx:125',message:'After date parsing',data:{parsedDate:parsedDate.toISOString(),isValid:!isNaN(parsedDate.getTime())},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
+      // #endregion
+      setMilestoneDueDate(parsedDate);
+      setMilestoneNotes(milestone.notes || '');
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/6d153e82-0f01-42bb-8769-6bca51679f09',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'edit-pakt.tsx:128',message:'Before opening modal',data:{showMilestoneModal:false},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
+      // #endregion
+      setShowMilestoneModal(true);
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/6d153e82-0f01-42bb-8769-6bca51679f09',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'edit-pakt.tsx:130',message:'After opening modal',data:{showMilestoneModal:true},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
+      // #endregion
+    } catch (error) {
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/6d153e82-0f01-42bb-8769-6bca51679f09',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'edit-pakt.tsx:132',message:'handleEditMilestone error',data:{error:error instanceof Error?error.message:String(error),stack:error instanceof Error?error.stack:undefined},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+      // #endregion
+      console.error('Error in handleEditMilestone:', error);
+      Alert.alert('Error', 'Failed to open milestone');
+    }
   };
 
   const handleSaveMilestone = async () => {
@@ -208,7 +247,7 @@ export default function EditPaktScreen() {
           style: 'destructive',
           onPress: async () => {
             try {
-              await PaktService.deletePakt(paktId as string);
+              await ResolveService.deleteResolve(paktId as string);
               Alert.alert('Success', 'Resolve deleted successfully', [
                 { text: 'OK', onPress: () => router.replace('/dashboard') }
               ]);
@@ -386,7 +425,12 @@ export default function EditPaktScreen() {
         visible={showMilestoneModal}
         transparent
         animationType="slide"
-        onRequestClose={() => setShowMilestoneModal(false)}
+        onRequestClose={() => {
+          // #region agent log
+          fetch('http://127.0.0.1:7242/ingest/6d153e82-0f01-42bb-8769-6bca51679f09',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'edit-pakt.tsx:389',message:'Modal onRequestClose',data:{showMilestoneModal},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
+          // #endregion
+          setShowMilestoneModal(false);
+        }}
       >
         <View style={styles.modalOverlay}>
           <View style={[styles.modalContent, { backgroundColor: colors.surface }]}>

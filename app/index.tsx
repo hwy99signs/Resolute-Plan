@@ -271,15 +271,15 @@ export default function WelcomeScreen() {
           >
             <View style={styles.statCard}>
               <Text style={styles.statValue}>10K+</Text>
-              <Text style={styles.statLabel}>{t('welcome.activeUsers')}</Text>
+              <Text style={styles.statLabel} numberOfLines={1}>{t('welcome.activeUsers')}</Text>
             </View>
             <View style={styles.statCard}>
               <Text style={styles.statValue}>50K+</Text>
-              <Text style={styles.statLabel}>{t('welcome.paktsAchieved')}</Text>
+              <Text style={styles.statLabel} numberOfLines={1}>{t('welcome.resolvesAchieved')}</Text>
             </View>
             <View style={styles.statCard}>
               <Text style={styles.statValue}>95%</Text>
-              <Text style={styles.statLabel}>{t('welcome.successRate')}</Text>
+              <Text style={styles.statLabel} numberOfLines={1}>{t('welcome.successRate')}</Text>
             </View>
           </Animated.View>
 
@@ -631,7 +631,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255, 255, 255, 0.1)',
     borderRadius: 16,
     paddingVertical: 16,
-    paddingHorizontal: 12,
+    paddingHorizontal: 8,
     flex: 1,
     alignItems: 'center',
     borderWidth: 1,
@@ -648,6 +648,8 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     opacity: 0.8,
     textAlign: 'center',
+    flexShrink: 1,
+    minWidth: 0,
   },
   illustrationContainer: {
     marginBottom: 48,

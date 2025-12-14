@@ -30,7 +30,7 @@ export default function PaktDetailScreen() {
   const params = useLocalSearchParams();
   const { colors } = useTheme();
   const { user } = useAuth();
-  const { Resolves, refetch } = useResolves();
+  const { resolves: Resolves, refetch } = useResolves();
   const { t } = useLanguage();
   const [showMenu, setShowMenu] = useState(false);
   const [showDatePicker, setShowDatePicker] = useState(false);
@@ -51,10 +51,13 @@ export default function PaktDetailScreen() {
     const loadPakt = async () => {
       try {
         setLoading(true);
+        // #region agent log
+        fetch('http://127.0.0.1:7242/ingest/6d153e82-0f01-42bb-8769-6bca51679f09',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'pakt-detail.tsx:51',message:'loadPakt entry',data:{paktId:params.id,ResolvesType:typeof Resolves,ResolvesIsArray:Array.isArray(Resolves),ResolvesLength:Resolves?.length},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+        // #endregion
         const paktId = params.id as string;
         if (paktId) {
           try {
-            const fetchedPakt = await ResolveService.getPakt(paktId);
+            const fetchedPakt = await ResolveService.getResolve(paktId);
             if (fetchedPakt) {
               setPakt(fetchedPakt);
               setSelectedDate(new Date(fetchedPakt.deadline));
@@ -74,7 +77,10 @@ export default function PaktDetailScreen() {
               throw paktError; // Re-throw other errors
             }
           }
-        } else if (Resolves.length > 0) {
+        } else if (Resolves && Resolves.length > 0) {
+          // #region agent log
+          fetch('http://127.0.0.1:7242/ingest/6d153e82-0f01-42bb-8769-6bca51679f09',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'pakt-detail.tsx:77',message:'Using fallback Resolve',data:{ResolvesLength:Resolves.length},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+          // #endregion
           // Fallback to first Resolve if no ID provided
           const firstPakt = Resolves[0];
           setPakt(firstPakt);
@@ -86,6 +92,9 @@ export default function PaktDetailScreen() {
           }
         }
       } catch (error) {
+        // #region agent log
+        fetch('http://127.0.0.1:7242/ingest/6d153e82-0f01-42bb-8769-6bca51679f09',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'pakt-detail.tsx:89',message:'loadPakt error',data:{error:error instanceof Error?error.message:String(error),stack:error instanceof Error?error.stack:undefined},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+        // #endregion
         console.error('Error loading Resolve:', error);
         Alert.alert('Error', 'Failed to load Resolve details');
       } finally {
@@ -93,7 +102,7 @@ export default function PaktDetailScreen() {
       }
     };
 
-    if (Resolves.length > 0 || params.id) {
+    if ((Resolves && Resolves.length > 0) || params.id) {
       loadPakt();
     }
   }, [params.id, Resolves]);
@@ -108,7 +117,7 @@ export default function PaktDetailScreen() {
       
       try {
         setSaving(true);
-        await ResolveService.updatePakt(resolve.id, {
+        await ResolveService.updateResolve(Resolve.id, {
           deadline: date.toISOString(),
         });
         setPakt({ ...Resolve, deadline: date.toISOString() });
@@ -146,10 +155,10 @@ export default function PaktDetailScreen() {
     
     try {
       await ShareService.sharePakt({
-        name: resolve.name,
-        description: resolve.description || '',
-        category: resolve.category,
-        progress: resolve.progress || 0,
+        name: Resolve.name,
+        description: Resolve.description || '',
+        category: Resolve.category,
+        progress: Resolve.progress || 0,
         milestones: milestones.map((m: any) => ({
           name: m.name,
           completed: m.completed,
@@ -191,7 +200,7 @@ export default function PaktDetailScreen() {
       ));
       
       // Refresh Resolve to get updated progress (database trigger should update it)
-      const updatedPakt = await ResolveService.getPakt(resolve.id);
+      const updatedPakt = await ResolveService.getResolve(Resolve.id);
       if (updatedPakt) {
         setPakt(updatedPakt);
       }
@@ -235,10 +244,10 @@ export default function PaktDetailScreen() {
         
         // Create notification for Resolve completion
         try {
-          await NotificationService.notifyResolveCompleted(user.id, resolve.name, resolve.id);
+          await NotificationService.notifyResolveCompleted(user.id, Resolve.name, Resolve.id);
           
           // Check for Resolve-based achievements
-          const allPakts = await ResolveService.getUserPakts(user.id);
+          const allPakts = await ResolveService.getUserResolves(user.id);
           const completedPaktsCount = allPakts.filter((p: any) => p.progress === 100).length;
           const newAchievements = await AchievementService.checkPaktAchievements(
             user.id,
@@ -324,7 +333,7 @@ export default function PaktDetailScreen() {
     
     try {
       setShowDeleteConfirm(false);
-              await ResolveService.deletePakt(resolve.id);
+              await ResolveService.deleteResolve(Resolve.id);
               
               // Refresh Resolves list
               await refetch();
@@ -363,12 +372,12 @@ export default function PaktDetailScreen() {
         <View style={[styles.progressCard, { backgroundColor: colors.surface }]}>
           <View style={styles.progressHeader}>
             <View>
-              <Text style={[styles.paktName, { color: colors.text }]}>{translateResolveName(resolve.name)}</Text>
-              <Text style={[styles.paktCategory, { color: colors.textSecondary }]}>{translateCategory(resolve.category)}</Text>
+              <Text style={[styles.paktName, { color: colors.text }]}>{translateResolveName(Resolve.name)}</Text>
+              <Text style={[styles.paktCategory, { color: colors.textSecondary }]}>{translateCategory(Resolve.category)}</Text>
             </View>
-            <View style={[styles.progressCircle, { borderColor: getProgressColor(resolve.progress || 0) }]}>
-              <Text style={[styles.progressText, { color: getProgressColor(resolve.progress || 0) }]}>
-                {resolve.progress || 0}%
+            <View style={[styles.progressCircle, { borderColor: getProgressColor(Resolve.progress || 0) }]}>
+              <Text style={[styles.progressText, { color: getProgressColor(Resolve.progress || 0) }]}>
+                {Resolve.progress || 0}%
               </Text>
             </View>
           </View>
@@ -376,13 +385,13 @@ export default function PaktDetailScreen() {
           {/* Progress Bar */}
           <View style={[styles.progressBarContainer, { backgroundColor: colors.border }]}>
             <View 
-              style={[
+                style={[
                 styles.progressBar, 
                 { 
-                  width: `${resolve.progress || 0}%`,
-                  backgroundColor: getProgressColor(resolve.progress || 0)
+                  width: `${Resolve.progress || 0}%`,
+                  backgroundColor: getProgressColor(Resolve.progress || 0)
                 }
-              ]} 
+              ]}
             />
           </View>
 
@@ -395,7 +404,7 @@ export default function PaktDetailScreen() {
         {/* Description */}
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>Description</Text>
-          <Text style={[styles.description, { color: colors.textSecondary }]}>{resolve.description || 'No description'}</Text>
+          <Text style={[styles.description, { color: colors.textSecondary }]}>{Resolve.description || 'No description'}</Text>
         </View>
 
         {/* Target Outcome */}
@@ -403,7 +412,7 @@ export default function PaktDetailScreen() {
           <Text style={[styles.sectionTitle, { color: colors.text }]}>Target Outcome</Text>
           <View style={[styles.infoCard, { backgroundColor: colors.surface }]}>
             <Target size={20} color={colors.primary} />
-            <Text style={[styles.infoText, { color: colors.text }]}>{resolve.target_outcome || 'No target outcome'}</Text>
+            <Text style={[styles.infoText, { color: colors.text }]}>{Resolve.target_outcome || 'No target outcome'}</Text>
           </View>
         </View>
 
@@ -417,7 +426,7 @@ export default function PaktDetailScreen() {
           >
             <Calendar size={20} color="#FFD88A" />
             <Text style={[styles.infoText, { color: colors.text, flex: 1 }]}>
-              {formatDeadline(resolve.deadline)}
+              {formatDeadline(Resolve.deadline)}
             </Text>
             {saving ? (
               <ActivityIndicator size="small" color={colors.primary} />
@@ -433,8 +442,8 @@ export default function PaktDetailScreen() {
           <View style={[styles.infoCard, { backgroundColor: colors.surface }]}>
             <Clock size={20} color="#96E6B3" />
             <Text style={[styles.infoText, { color: colors.text }]}>
-              {resolve.reminders?.frequency ? 
-                resolve.reminders.frequency.charAt(0).toUpperCase() + resolve.reminders.frequency.slice(1) + ' at ' + resolve.reminders.time
+              {Resolve.reminders?.frequency ? 
+                Resolve.reminders.frequency.charAt(0).toUpperCase() + Resolve.reminders.frequency.slice(1) + ' at ' + Resolve.reminders.time
                 : 'No reminders set'}
             </Text>
           </View>
@@ -534,7 +543,7 @@ export default function PaktDetailScreen() {
               style={[styles.menuItem, { borderBottomColor: colors.border }]}
               onPress={() => {
                 setShowMenu(false);
-                router.push(`/edit-pakt?paktId=${resolve.id}`);
+                router.push(`/edit-pakt?paktId=${Resolve.id}`);
               }}
             >
               <Edit size={20} color={colors.text} />
@@ -749,7 +758,7 @@ export default function PaktDetailScreen() {
                   />
                   {Resolve?.deadline && (
                     <Text style={[styles.fallbackHint, { color: colors.textSecondary }]}>
-                      Must be before {new Date(resolve.deadline).toISOString().split('T')[0]}
+                      Must be before {new Date(Resolve.deadline).toISOString().split('T')[0]}
                     </Text>
                   )}
                 </View>
