@@ -258,6 +258,9 @@ export default function InsightsScreen() {
               styles.headerTitle,
               { fontSize: titleFontSize }
             ]}
+            numberOfLines={1}
+            adjustsFontSizeToFit
+            minimumFontScale={0.8}
           >
             {t('insights.title')}
           </Animated.Text>
@@ -271,7 +274,14 @@ export default function InsightsScreen() {
               }),
             }}
           >
-            <Text style={styles.headerSubtitle}>{t('insights.subtitle')}</Text>
+            <Text 
+              style={styles.headerSubtitle}
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              minimumFontScale={0.85}
+            >
+              {t('insights.subtitle')}
+            </Text>
           </Animated.View>
         </View>
       </Animated.View>
@@ -365,8 +375,17 @@ export default function InsightsScreen() {
             {categories.map((category, index) => (
               <View key={index} style={styles.categoryRow}>
                 <View style={styles.categoryLeft}>
-                  <Text style={[styles.categoryName, { color: colors.text }]}>{category.name}</Text>
-                  <Text style={[styles.categoryCount, { color: colors.textSecondary }]}>{category.count} Resolves</Text>
+                  <Text 
+                    style={[styles.categoryName, { color: colors.text }]}
+                    numberOfLines={1}
+                    adjustsFontSizeToFit
+                    minimumFontScale={0.85}
+                  >
+                    {category.name}
+                  </Text>
+                  <Text style={[styles.categoryCount, { color: colors.textSecondary }]}>
+                    {category.count} Resolves
+                  </Text>
                 </View>
                 <View style={[styles.categoryBarContainer, { backgroundColor: colors.border }]}>
                   <View 
@@ -395,8 +414,17 @@ export default function InsightsScreen() {
             {productivityTimes.map((time, index) => (
               <View key={index} style={styles.timeRow}>
                 <View style={styles.timeLeft}>
-                  <Text style={[styles.timeText, { color: colors.text }]}>{time.time}</Text>
-                  <Text style={[styles.timePercentage, { color: colors.textSecondary }]}>{time.percentage}%</Text>
+                  <Text 
+                    style={[styles.timeText, { color: colors.text }]}
+                    numberOfLines={1}
+                    adjustsFontSizeToFit
+                    minimumFontScale={0.85}
+                  >
+                    {time.time}
+                  </Text>
+                  <Text style={[styles.timePercentage, { color: colors.textSecondary }]}>
+                    {time.percentage}%
+                  </Text>
                 </View>
                 <View style={[styles.timeBarContainer, { backgroundColor: colors.border }]}>
                   <View 
@@ -418,9 +446,30 @@ export default function InsightsScreen() {
         <View style={styles.section}>
           <View style={styles.consistencyCard}>
             <View style={styles.consistencyLeft}>
-              <Text style={styles.consistencyTitle}>{t('insights.consistencyScore')}</Text>
-              <Text style={styles.consistencyScore}>{consistencyScore}</Text>
-              <Text style={styles.consistencyText}>{t('insights.excellentKeepItUp')}</Text>
+              <Text 
+                style={styles.consistencyTitle}
+                numberOfLines={1}
+                adjustsFontSizeToFit
+                minimumFontScale={0.85}
+              >
+                {t('insights.consistencyScore')}
+              </Text>
+              <Text 
+                style={styles.consistencyScore}
+                numberOfLines={1}
+                adjustsFontSizeToFit
+                minimumFontScale={0.7}
+              >
+                {consistencyScore}
+              </Text>
+              <Text 
+                style={styles.consistencyText}
+                numberOfLines={1}
+                adjustsFontSizeToFit
+                minimumFontScale={0.85}
+              >
+                {t('insights.excellentKeepItUp')}
+              </Text>
             </View>
             
             <View style={styles.consistencyRight}>
