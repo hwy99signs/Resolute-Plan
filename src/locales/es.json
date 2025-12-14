@@ -51,6 +51,7 @@
     "deleteConfirmMessage": "¿Estás seguro de que quieres eliminar \"{{resolveName}}\"? Esta acción no se puede deshacer.",
     "deleteError": "Error al eliminar la resolución. Por favor intenta de nuevo.",
     "shareResolve": "Compartir Resolución",
+    "sharePakt": "Compartir Resolución",
     "exportPdf": "Exportar a PDF",
     "milestones": "Hitos",
     "progress": "Progreso",

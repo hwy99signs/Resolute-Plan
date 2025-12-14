@@ -51,6 +51,7 @@
     "deleteConfirmMessage": "Are you sure you want to delete \"{{resolveName}}\"? This action cannot be undone.",
     "deleteError": "Failed to delete resolve. Please try again.",
     "shareResolve": "Share Resolve",
+    "sharePakt": "Share Resolve",
     "exportPdf": "Export to PDF",
     "milestones": "Milestones",
     "progress": "Progress",

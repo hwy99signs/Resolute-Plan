@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Modal, Platform, Alert, ActivityIndicator, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter, useLocalSearchParams } from 'expo-router';
+import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router';
 import { ArrowLeft, Calendar, Clock, Target, CheckCircle, Circle, Edit, Trash2, Share2, MoreVertical } from 'lucide-react-native';
 import { useTheme } from '../src/contexts/ThemeContext';
 import { useAuth } from '../src/contexts/AuthContext';
@@ -45,6 +45,23 @@ export default function PaktDetailScreen() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showCompletionModal, setShowCompletionModal] = useState(false);
   const [showNotFoundModal, setShowNotFoundModal] = useState(false);
+  
+  // Reload milestones when screen comes into focus
+  useFocusEffect(
+    useCallback(() => {
+      const reloadMilestones = async () => {
+        const paktId = params.id as string || Resolve?.id;
+        if (!paktId) return;
+        try {
+          const paktMilestones = await MilestoneService.getPaktMilestones(paktId);
+          setMilestones(paktMilestones.sort((a: any, b: any) => (a.order_index || 0) - (b.order_index || 0)));
+        } catch (error) {
+          console.error('Error reloading milestones:', error);
+        }
+      };
+      reloadMilestones();
+    }, [params.id, Resolve?.id])
+  );
   
   // Find Resolve from params or use first Resolve as fallback
   useEffect(() => {
@@ -175,7 +192,7 @@ export default function PaktDetailScreen() {
     if (!Resolve) return;
     
     try {
-      await ShareService.copyLink(resolve.id);
+      await ShareService.copyLink(Resolve.id);
       Alert.alert('Success', t('share.copied'));
     } catch (error) {
       console.error('Error copying link:', error);
@@ -216,9 +233,9 @@ export default function PaktDetailScreen() {
             await NotificationService.notifyMilestoneAchieved(
               user.id,
               milestone.name,
-              resolve.name,
+              Resolve.name,
               milestoneId,
-              resolve.id
+              Resolve.id
             );
             
             // Check for milestone-based achievements
@@ -275,10 +292,10 @@ export default function PaktDetailScreen() {
     if (!user || !Resolve) return;
     
     // Validate milestone deadline doesn't exceed Resolve deadline
-    if (resolve.deadline && date > new Date(resolve.deadline)) {
+    if (Resolve.deadline && date > new Date(Resolve.deadline)) {
       Alert.alert(
         'Invalid Date',
-        `Milestone deadline cannot exceed the Resolve deadline of ${new Date(resolve.deadline).toLocaleDateString()}. Please select an earlier date.`
+        `Milestone deadline cannot exceed the Resolve deadline of ${new Date(Resolve.deadline).toLocaleDateString()}. Please select an earlier date.`
       );
       return;
     }
@@ -509,14 +526,14 @@ export default function PaktDetailScreen() {
         <View style={styles.actionButtons}>
           <TouchableOpacity 
             style={styles.primaryButton}
-            onPress={() => router.push(`/milestone-builder?paktId=${resolve.id}`)}
+            onPress={() => router.push(`/milestone-builder?resolveId=${Resolve.id}`)}
           >
             <Text style={styles.primaryButtonText}>{t('resolve.addMilestone')}</Text>
           </TouchableOpacity>
           
           <TouchableOpacity 
             style={styles.secondaryButton}
-            onPress={() => {/* Share Resolve */}}
+            onPress={handleSharePakt}
           >
             <Share2 size={20} color="#9163F2" />
             <Text style={styles.secondaryButtonText}>{t('common.share')}</Text>
@@ -700,7 +717,7 @@ export default function PaktDetailScreen() {
                     if (date) setMilestoneDeadlineDate(date);
                   }}
                   minimumDate={new Date()}
-                  maximumDate={Resolve?.deadline ? new Date(resolve.deadline) : undefined}
+                  maximumDate={Resolve?.deadline ? new Date(Resolve.deadline) : undefined}
                   textColor={colors.text}
                 />
               </View>
@@ -718,7 +735,7 @@ export default function PaktDetailScreen() {
               }
             }}
             minimumDate={new Date()}
-            maximumDate={Resolve?.deadline ? new Date(resolve.deadline) : undefined}
+            maximumDate={Resolve?.deadline ? new Date(Resolve.deadline) : undefined}
           />
         ) : (
           <Modal

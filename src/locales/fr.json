@@ -51,6 +51,7 @@
     "deleteConfirmMessage": "Êtes-vous sûr de vouloir supprimer \"{{resolveName}}\" ? Cette action ne peut pas être annulée.",
     "deleteError": "Échec de la suppression de la résolution. Veuillez réessayer.",
     "shareResolve": "Partager la Résolution",
+    "sharePakt": "Partager la Résolution",
     "exportPdf": "Exporter en PDF",
     "milestones": "Jalons",
     "progress": "Progrès",

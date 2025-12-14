@@ -7,6 +7,8 @@ import { useTheme } from '../src/contexts/ThemeContext';
 import { useLanguage } from '../src/contexts/LanguageContext';
 import { Calendar } from 'lucide-react-native';
 import { ResolveService } from '../src/services/resolve.service';
+import { MilestoneService } from '../src/services/milestone.service';
+import { useAuth } from '../src/contexts/AuthContext';
 
 // Conditional import for DateTimePicker
 let DateTimePicker: any = null;
@@ -29,33 +31,39 @@ export default function MilestoneBuilder() {
   const { paktData, updatePaktData } = usePaktCreation();
   const { colors } = useTheme();
   const { t } = useLanguage();
+  const { user } = useAuth();
+  const resolveId = (params.resolveId || params.paktId) as string; // Support both for backward compatibility
+  const isEditingExisting = !!resolveId;
   const [milestones, setMilestones] = useState<Milestone[]>([
     { id: '1', title: '', completed: false },
   ]);
   const [currentInput, setCurrentInput] = useState('');
-  const [paktDeadline, setPaktDeadline] = useState<Date | null>(null);
+  const [resolveDeadline, setResolveDeadline] = useState<Date | null>(null);
   const [showDatePicker, setShowDatePicker] = useState<string | null>(null);
   const [tempDate, setTempDate] = useState<Date>(new Date());
+  const [saving, setSaving] = useState(false);
+  
+  // Note: We don't load existing milestones here - this screen is for adding NEW milestones only
+  // Existing milestones can be viewed/edited on the detail/edit screens
   
   // Load Resolve deadline for validation
   useEffect(() => {
-    const loadPaktDeadline = async () => {
-      const paktId = params.paktId as string;
-      if (paktId) {
+    const loadResolveDeadline = async () => {
+      if (resolveId) {
         try {
-          const Resolve = await ResolveService.getResolve(paktId);
+          const Resolve = await ResolveService.getResolve(resolveId);
           if (Resolve?.deadline) {
-            setPaktDeadline(new Date(Resolve.deadline));
+            setResolveDeadline(new Date(Resolve.deadline));
           }
         } catch (error) {
           console.error('Error loading Resolve deadline:', error);
         }
       } else if (paktData.targetDate) {
-        setPaktDeadline(new Date(paktData.targetDate));
+        setResolveDeadline(new Date(paktData.targetDate));
       }
     };
-    loadPaktDeadline();
-  }, [params.paktId, paktData.targetDate]);
+    loadResolveDeadline();
+  }, [resolveId, paktData.targetDate]);
 
   const addMilestone = () => {
     if (currentInput.trim()) {
@@ -69,7 +77,7 @@ export default function MilestoneBuilder() {
 
   const updateMilestoneDueDate = (milestoneId: string, date: Date) => {
     // Validate that milestone deadline doesn't exceed Resolve deadline
-    if (paktDeadline && date > paktDeadline) {
+    if (resolveDeadline && date > resolveDeadline) {
       Alert.alert(
         t('milestoneBuilder.invalidDate'),
         t('milestoneBuilder.milestoneExceedsDeadline')
@@ -98,7 +106,7 @@ export default function MilestoneBuilder() {
     setMilestones(milestones.filter(m => m.id !== id));
   };
 
-  const handleContinue = () => {
+  const handleContinue = async () => {
     const validMilestones = milestones.filter(m => m.title.trim() && m.dueDate);
     
     // Validate all milestones have deadlines
@@ -112,10 +120,10 @@ export default function MilestoneBuilder() {
     }
     
     // Validate milestone deadlines don't exceed Resolve deadline
-    if (paktDeadline) {
+    if (resolveDeadline) {
       const invalidMilestones = validMilestones.filter(m => {
         if (!m.dueDate) return false;
-        return new Date(m.dueDate) > paktDeadline;
+        return new Date(m.dueDate) > resolveDeadline;
       });
       
       if (invalidMilestones.length > 0) {
@@ -127,6 +135,50 @@ export default function MilestoneBuilder() {
       }
     }
     
+    if (validMilestones.length === 0) {
+      Alert.alert('Error', 'Please add at least one milestone');
+      return;
+    }
+
+    // If editing existing Resolve, save milestones directly to database
+    if (isEditingExisting && resolveId && user) {
+      try {
+        setSaving(true);
+        
+        // Get existing milestones to determine next order_index
+        const existingMilestones = await MilestoneService.getPaktMilestones(resolveId);
+        const maxOrderIndex = existingMilestones.length > 0 
+          ? Math.max(...existingMilestones.map(m => m.order_index || 0))
+          : -1;
+        
+        // Create all valid milestones (they're all new since we don't load existing ones)
+        for (let i = 0; i < validMilestones.length; i++) {
+          const milestone = validMilestones[i];
+          await MilestoneService.createMilestone({
+            resolve_id: resolveId,
+            user_id: user.id,
+            name: milestone.title.trim(),
+            due_date: milestone.dueDate ? new Date(milestone.dueDate).toISOString() : new Date().toISOString(),
+            notes: null,
+            importance: 3,
+            completed: false,
+            order_index: maxOrderIndex + 1 + i,
+          });
+        }
+        
+        setSaving(false);
+        Alert.alert('Success', 'Milestones added successfully!', [
+          { text: 'OK', onPress: () => router.back() }
+        ]);
+      } catch (error: any) {
+        setSaving(false);
+        console.error('Error saving milestones:', error);
+        Alert.alert('Error', error.message || 'Failed to save milestones');
+      }
+      return;
+    }
+    
+    // For new Resolve creation, continue with normal flow
     if (validMilestones.length > 0) {
       // Convert to format expected by context
       const formattedMilestones = validMilestones.map((m, index) => ({
@@ -148,8 +200,12 @@ export default function MilestoneBuilder() {
         <TouchableOpacity onPress={() => router.back()}>
           <Text style={[styles.backButton, { color: colors.primary }]}>← {t('common.back')}</Text>
         </TouchableOpacity>
-        <Text style={[styles.title, { color: colors.text }]}>{t('milestoneBuilder.title')}</Text>
-        <Text style={[styles.subtitle, { color: colors.textSecondary }]}>{t('milestoneBuilder.subtitle')}</Text>
+        <Text style={[styles.title, { color: colors.text }]}>
+          {isEditingExisting ? 'Add Milestones' : t('milestoneBuilder.title')}
+        </Text>
+        <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
+          {isEditingExisting ? 'Add new milestones to your Resolve' : t('milestoneBuilder.subtitle')}
+        </Text>
       </View>
 
       <ScrollView style={styles.content}>
@@ -196,7 +252,7 @@ export default function MilestoneBuilder() {
                 </Text>
               </TouchableOpacity>
               
-              {milestone.dueDate && paktDeadline && new Date(milestone.dueDate) > paktDeadline && (
+              {milestone.dueDate && resolveDeadline && new Date(milestone.dueDate) > resolveDeadline && (
                 <Text style={[styles.errorText, { color: colors.error }]}>
                   ⚠️ Deadline exceeds Resolve deadline
                 </Text>
@@ -220,10 +276,10 @@ export default function MilestoneBuilder() {
           </TouchableOpacity>
         </View>
         
-        {paktDeadline && (
+        {resolveDeadline && (
           <View style={[styles.infoBox, { backgroundColor: colors.primaryLight }]}>
             <Text style={[styles.infoText, { color: colors.textSecondary }]}>
-              📅 {t('milestoneBuilder.paktDeadline')}: {paktDeadline.toLocaleDateString('en-US', { 
+              📅 Resolve Deadline: {resolveDeadline.toLocaleDateString('en-US', { 
                 month: 'long', 
                 day: 'numeric', 
                 year: 'numeric' 
@@ -260,12 +316,14 @@ export default function MilestoneBuilder() {
         <TouchableOpacity
           style={[
             styles.continueButton, 
-            (validMilestones.length === 0 || milestones.some(m => m.title.trim() && !m.dueDate)) && styles.disabledButton
+            (validMilestones.length === 0 || milestones.some(m => m.title.trim() && !m.dueDate) || saving) && styles.disabledButton
           ]}
           onPress={handleContinue}
-          disabled={validMilestones.length === 0 || milestones.some(m => m.title.trim() && !m.dueDate)}
+          disabled={validMilestones.length === 0 || milestones.some(m => m.title.trim() && !m.dueDate) || saving}
         >
-          <Text style={styles.continueButtonText}>{t('common.continue')}</Text>
+          <Text style={styles.continueButtonText}>
+            {saving ? 'Saving...' : (isEditingExisting ? 'Save Milestones' : t('common.continue'))}
+          </Text>
         </TouchableOpacity>
       </View>
 
@@ -301,7 +359,7 @@ export default function MilestoneBuilder() {
                     if (date) setTempDate(date);
                   }}
                   minimumDate={new Date()}
-                  maximumDate={paktDeadline || undefined}
+                  maximumDate={resolveDeadline || undefined}
                   textColor={colors.text}
                 />
               </View>
@@ -319,7 +377,7 @@ export default function MilestoneBuilder() {
               }
             }}
             minimumDate={new Date()}
-            maximumDate={paktDeadline || undefined}
+            maximumDate={resolveDeadline || undefined}
           />
         ) : (
           <Modal
@@ -357,9 +415,9 @@ export default function MilestoneBuilder() {
                     placeholder="YYYY-MM-DD"
                     placeholderTextColor={colors.textSecondary}
                   />
-                  {paktDeadline && (
+                  {resolveDeadline && (
                     <Text style={[styles.fallbackHint, { color: colors.textSecondary }]}>
-                      Must be before {paktDeadline.toISOString().split('T')[0]}
+                      Must be before {resolveDeadline.toISOString().split('T')[0]}
                     </Text>
                   )}
                 </View>
