@@ -20,9 +20,12 @@ export default function AchievementScreen() {
 
   // Get screen width for responsive calculations
   const screenWidth = Dimensions.get('window').width;
-  const cardGap = getSpacing(16);
-  const horizontalPadding = rp(24);
-  const cardWidth = (screenWidth - (horizontalPadding * 2) - (cardGap * 2)) / 3;
+  const cardGap = getSpacing(12);
+  const horizontalPadding = rp(20);
+  // Calculate card width with proper spacing: screen width - 2*horizontal padding - 2*gaps between 3 cards
+  const availableWidth = screenWidth - (horizontalPadding * 2);
+  const totalGaps = cardGap * 2; // 2 gaps for 3 cards
+  const cardWidth = (availableWidth - totalGaps) / 3;
 
   // Animated values for collapsible header
   const scrollY = useRef(new Animated.Value(0)).current;
@@ -310,7 +313,6 @@ export default function AchievementScreen() {
                       borderColor: badge.glow,
                       borderWidth: isDarkMode ? 1 : 0,
                       width: cardWidth,
-                      marginRight: (index % 3 === 2) ? 0 : cardGap,
                       marginBottom: cardGap,
                     }
                   ]}
@@ -378,7 +380,6 @@ export default function AchievementScreen() {
                       borderWidth: 1,
                       opacity: 0.7,
                       width: cardWidth,
-                      marginRight: (index % 3 === 2) ? 0 : cardGap,
                       marginBottom: cardGap,
                     }
                   ]}
@@ -423,9 +424,9 @@ export default function AchievementScreen() {
             style={[styles.motivationText, { color: colors.textSecondary }]}
             numberOfLines={3}
             adjustsFontSizeToFit
-            minimumFontScale={0.85}
+            minimumFontScale={0.8}
           >
-            Keep going! Complete more Resolves to unlock new badges
+            {t('achievements.motivationText')}
           </Text>
         </View>
 
@@ -498,7 +499,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    padding: rp(24),
+    paddingHorizontal: rp(20),
     paddingBottom: rp(40),
   },
   section: {
@@ -518,117 +519,127 @@ const styles = StyleSheet.create({
   badgesGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    justifyContent: 'flex-start',
+    justifyContent: 'space-between',
+    width: '100%',
   },
   badgeCard: {
-    aspectRatio: 0.85,
-    borderRadius: rp(24),
-    padding: rp(16),
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.15,
-    shadowRadius: 20,
-    elevation: 8,
-  },
-  badgeIconContainer: {
-    width: rp(68),
-    height: rp(68),
+    minHeight: wp(28),
+    maxHeight: wp(35),
     borderRadius: rp(20),
+    padding: rp(12),
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: getSpacing(12),
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
+    shadowOpacity: 0.12,
+    shadowRadius: 12,
     elevation: 6,
   },
+  badgeIconContainer: {
+    width: getIconSize(56),
+    height: getIconSize(56),
+    borderRadius: rp(16),
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: getSpacing(8),
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.25,
+    shadowRadius: 6,
+    elevation: 5,
+  },
   badgeTitle: {
-    fontSize: rf(14),
+    fontSize: rf(13),
     fontWeight: '700',
     textAlign: 'center',
-    marginBottom: getSpacing(4),
+    marginBottom: getSpacing(2),
     letterSpacing: -0.2,
-    lineHeight: rf(18),
+    lineHeight: rf(16),
+    paddingHorizontal: rp(4),
   },
   badgeDate: {
-    fontSize: rf(11),
+    fontSize: rf(10),
     textAlign: 'center',
     fontWeight: '500',
     opacity: 0.8,
+    paddingHorizontal: rp(4),
   },
   lockedBadgeCard: {
-    aspectRatio: 0.85,
-    borderRadius: rp(24),
-    padding: rp(16),
+    minHeight: wp(28),
+    maxHeight: wp(35),
+    borderRadius: rp(20),
+    padding: rp(12),
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 2,
   },
   lockedBadgeIconContainer: {
-    width: rp(68),
-    height: rp(68),
-    borderRadius: rp(20),
+    width: getIconSize(56),
+    height: getIconSize(56),
+    borderRadius: rp(16),
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: getSpacing(12),
+    marginBottom: getSpacing(8),
     position: 'relative',
   },
   lockedBadgeTitle: {
-    fontSize: rf(14),
+    fontSize: rf(13),
     fontWeight: '600',
     textAlign: 'center',
-    marginBottom: getSpacing(4),
+    marginBottom: getSpacing(2),
     letterSpacing: -0.2,
-    lineHeight: rf(18),
+    lineHeight: rf(16),
+    paddingHorizontal: rp(4),
   },
   lockedBadgeStatus: {
-    fontSize: rf(11),
+    fontSize: rf(10),
     textAlign: 'center',
     fontWeight: '500',
     opacity: 0.7,
-    lineHeight: rf(14),
+    lineHeight: rf(13),
+    paddingHorizontal: rp(4),
   },
   lockOverlay: {
     position: 'absolute',
-    bottom: -rp(4),
-    right: -rp(4),
-    width: rp(24),
-    height: rp(24),
-    borderRadius: rp(12),
+    bottom: -rp(2),
+    right: -rp(2),
+    width: getIconSize(20),
+    height: getIconSize(20),
+    borderRadius: getIconSize(10),
     backgroundColor: 'rgba(0, 0, 0, 0.6)',
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 2,
+    borderWidth: 1.5,
     borderColor: 'rgba(255, 255, 255, 0.3)',
   },
   motivationCard: {
     backgroundColor: '#FFFFFF',
-    borderRadius: rp(24),
-    padding: rp(28),
+    borderRadius: rp(20),
+    padding: rp(24),
     alignItems: 'center',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.08,
     shadowRadius: 12,
     elevation: 4,
-    marginTop: getSpacing(64),
+    marginTop: getSpacing(40),
+    width: '100%',
+    maxWidth: '100%',
   },
   motivationEmoji: {
-    fontSize: rf(56),
-    marginBottom: getSpacing(16),
+    fontSize: rf(48),
+    marginBottom: getSpacing(12),
   },
   motivationText: {
-    fontSize: rf(16),
+    fontSize: rf(15),
     color: '#666',
     textAlign: 'center',
-    lineHeight: rf(24),
+    lineHeight: rf(22),
     fontWeight: '500',
+    paddingHorizontal: rp(8),
   },
 });

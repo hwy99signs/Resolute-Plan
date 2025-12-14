@@ -221,7 +221,8 @@
     "completeFirstResolve": "Complétez votre première Résolution",
     "complete5Resolves": "Complétez 5 Résolutions",
     "complete10Resolves": "Complétez 10 Résolutions",
-    "complete25Resolves": "Complétez 25 Résolutions"
+    "complete25Resolves": "Complétez 25 Résolutions",
+    "motivationText": "Continuez ! Complétez plus de Résolutions pour débloquer de nouveaux badges"
   },
   "categories": {
     "title": "Choisir une Catégorie",

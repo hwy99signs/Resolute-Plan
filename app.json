@@ -18,7 +18,8 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.resolutionstracker.app",
-      "buildNumber": "3"
+      "buildNumber": "3",
+      "icon": "./assets/icon.png"
     },
     "android": {
       "adaptiveIcon": {

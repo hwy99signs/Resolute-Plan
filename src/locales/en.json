@@ -218,7 +218,8 @@
     "completeFirstResolve": "Complete your first Resolve",
     "complete5Resolves": "Complete 5 Resolves",
     "complete10Resolves": "Complete 10 Resolves",
-    "complete25Resolves": "Complete 25 Resolves"
+    "complete25Resolves": "Complete 25 Resolves",
+    "motivationText": "Keep going! Complete more Resolves to unlock new badges"
   },
   "categories": {
     "title": "Choose a Category",
