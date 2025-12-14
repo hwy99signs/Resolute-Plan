@@ -427,7 +427,7 @@
     "schedule": "Schedule",
     "scheduleHint": "Tap status icon to mark, tap day to toggle, tap time to change",
     "scheduleViewHint": "Tap the status icon to mark as completed or missed",
-    "durationWeeks": "Duration: {weeks} weeks",
+    "durationWeeks": "Duration: {{weeks}} weeks",
     "setTime": "Set time",
     "selectTime": "Select Time",
     "markDay": "Mark {{day}}",

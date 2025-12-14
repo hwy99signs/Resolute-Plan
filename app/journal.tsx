@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, Alert, ActivityIndicator, Modal } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { ArrowLeft, Plus, BookOpen, Calendar, Edit, Trash2, X } from 'lucide-react-native';
+import { ArrowLeft, Plus, BookOpen, Calendar, Edit, Trash2, X, Share2 } from 'lucide-react-native';
 import { useTheme } from '../src/contexts/ThemeContext';
 import { useAuth } from '../src/contexts/AuthContext';
 import { useLanguage } from '../src/contexts/LanguageContext';
@@ -10,19 +10,22 @@ import { JournalService, type JournalEntry } from '../src/services/journal.servi
 import { useResolves } from '../src/hooks/useResolves';
 import { translateResolveName } from '../src/utils/translations';
 import BottomTabBar from '../src/components/BottomTabBar';
+import * as Print from 'expo-print';
+import * as Sharing from 'expo-sharing';
 
 export default function JournalScreen() {
   const router = useRouter();
   const { colors } = useTheme();
   const { user } = useAuth();
   const { t } = useLanguage();
-  const { Resolves } = useResolves();
+  const { resolves: Resolves } = useResolves();
   const [entries, setEntries] = useState<JournalEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [showEntryModal, setShowEntryModal] = useState(false);
   const [editingEntry, setEditingEntry] = useState<JournalEntry | null>(null);
   const [selectedPaktId, setSelectedPaktId] = useState<string>('');
   const [entryDate, setEntryDate] = useState(new Date().toISOString().split('T')[0]);
+  const [title, setTitle] = useState('');
   const [mood, setMood] = useState('');
   const [thoughts, setThoughts] = useState('');
   const [saving, setSaving] = useState(false);
@@ -62,6 +65,7 @@ export default function JournalScreen() {
           user_id: user.id,
           pakt_id: selectedPaktId || undefined,
           date: entryDate,
+          title: title.trim() || undefined,
           mood: mood || undefined,
           thoughts: thoughts.trim(),
         });
@@ -70,6 +74,7 @@ export default function JournalScreen() {
           user_id: user.id,
           pakt_id: selectedPaktId || undefined,
           date: entryDate,
+          title: title.trim() || undefined,
           mood: mood || undefined,
           thoughts: thoughts.trim(),
         });
@@ -113,6 +118,7 @@ export default function JournalScreen() {
     setEditingEntry(entry);
     setSelectedPaktId(entry.pakt_id || '');
     setEntryDate(entry.date);
+    setTitle(entry.title || '');
     setMood(entry.mood || '');
     setThoughts(entry.thoughts);
     setShowEntryModal(true);
@@ -122,6 +128,7 @@ export default function JournalScreen() {
     setEditingEntry(null);
     setSelectedPaktId('');
     setEntryDate(new Date().toISOString().split('T')[0]);
+    setTitle('');
     setMood('');
     setThoughts('');
   };
@@ -132,9 +139,121 @@ export default function JournalScreen() {
   };
 
   const getPaktName = (paktId?: string) => {
-    if (!paktId) return null;
+    if (!paktId || !Resolves) return null;
     const Resolve = Resolves.find(p => p.id === paktId);
     return Resolve?.name;
+  };
+
+  const generateJournalPDFHTML = (entry: JournalEntry): string => {
+    const entryDate = new Date(entry.date).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+    const paktName = entry.pakt_id ? getPaktName(entry.pakt_id) : null;
+
+    return `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="utf-8">
+          <style>
+            body {
+              font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+              padding: 40px;
+              color: #333;
+              line-height: 1.6;
+            }
+            .header {
+              border-bottom: 3px solid #6366f1;
+              padding-bottom: 20px;
+              margin-bottom: 30px;
+            }
+            .title {
+              font-size: 28px;
+              font-weight: bold;
+              color: #1f2937;
+              margin-bottom: 10px;
+            }
+            .date {
+              font-size: 14px;
+              color: #6b7280;
+              margin-bottom: 15px;
+            }
+            .meta {
+              display: flex;
+              gap: 20px;
+              flex-wrap: wrap;
+              margin-bottom: 20px;
+            }
+            .meta-item {
+              font-size: 14px;
+              color: #4b5563;
+            }
+            .mood {
+              font-size: 32px;
+              margin: 20px 0;
+            }
+            .content {
+              margin-top: 30px;
+            }
+            .thoughts {
+              font-size: 16px;
+              line-height: 1.8;
+              color: #374151;
+              white-space: pre-wrap;
+            }
+            .tag {
+              display: inline-block;
+              background-color: #eef2ff;
+              color: #6366f1;
+              padding: 6px 12px;
+              border-radius: 6px;
+              font-size: 12px;
+              font-weight: 600;
+              margin-bottom: 15px;
+            }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <div class="title">${entry.title || 'Journal Entry'}</div>
+            <div class="date">${entryDate}</div>
+            <div class="meta">
+              ${paktName ? `<div class="meta-item"><strong>Linked to:</strong> ${paktName}</div>` : ''}
+              ${entry.mood ? `<div class="meta-item"><strong>Mood:</strong> ${entry.mood}</div>` : ''}
+            </div>
+          </div>
+          ${entry.mood ? `<div class="mood">${entry.mood}</div>` : ''}
+          <div class="content">
+            <div class="thoughts">${entry.thoughts}</div>
+          </div>
+        </body>
+      </html>
+    `;
+  };
+
+  const handleShareJournal = async (entry: JournalEntry) => {
+    try {
+      const html = generateJournalPDFHTML(entry);
+      
+      const { uri } = await Print.printToFileAsync({
+        html,
+        base64: false,
+      });
+
+      if (await Sharing.isAvailableAsync()) {
+        await Sharing.shareAsync(uri, {
+          mimeType: 'application/pdf',
+          dialogTitle: `Share Journal Entry${entry.title ? `: ${entry.title}` : ''}`,
+        });
+      } else {
+        Alert.alert('Error', 'Sharing is not available on this device');
+      }
+    } catch (error) {
+      console.error('Error sharing journal:', error);
+      Alert.alert('Error', 'Failed to share journal entry');
+    }
   };
 
   const moods = ['😊', '😌', '😐', '😟', '😢', '🎉', '💪', '🙏'];
@@ -190,6 +309,12 @@ export default function JournalScreen() {
                   </View>
                   <View style={styles.entryActions}>
                     <TouchableOpacity
+                      onPress={() => handleShareJournal(entry)}
+                      style={styles.actionButton}
+                    >
+                      <Share2 size={18} color={colors.primary} />
+                    </TouchableOpacity>
+                    <TouchableOpacity
                       onPress={() => handleEditEntry(entry)}
                       style={styles.actionButton}
                     >
@@ -204,10 +329,14 @@ export default function JournalScreen() {
                   </View>
                 </View>
 
+                {entry.title && (
+                  <Text style={[styles.entryTitle, { color: colors.text }]}>{entry.title}</Text>
+                )}
+
                 {entry.pakt_id && (
                   <View style={[styles.paktTag, { backgroundColor: `${colors.primary}20` }]}>
                     <Text style={[styles.paktTagText, { color: colors.primary }]}>
-                      {t('journal.linkedToPakt')}: {getPaktName(entry.pakt_id)}
+                      {t('journal.linkedToResolve')}: {getPaktName(entry.pakt_id)}
                     </Text>
                   </View>
                 )}
@@ -242,6 +371,17 @@ export default function JournalScreen() {
             </View>
 
             <ScrollView style={styles.modalScroll}>
+              {/* Title */}
+              <View style={styles.formGroup}>
+                <Text style={[styles.label, { color: colors.text }]}>Title (Optional)</Text>
+                <TextInput
+                  style={[styles.input, { backgroundColor: colors.background, color: colors.text }]}
+                  value={title}
+                  onChangeText={setTitle}
+                  placeholder="Enter journal title"
+                />
+              </View>
+
               {/* Date */}
               <View style={styles.formGroup}>
                 <Text style={[styles.label, { color: colors.text }]}>{t('journal.date')}</Text>
@@ -255,7 +395,7 @@ export default function JournalScreen() {
 
               {/* Linked Resolve */}
               <View style={styles.formGroup}>
-                <Text style={[styles.label, { color: colors.text }]}>{t('journal.linkedToPakt')} (Optional)</Text>
+                <Text style={[styles.label, { color: colors.text }]}>{t('journal.linkedToResolve')} (Optional)</Text>
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.paktSelector}>
                   <TouchableOpacity
                     style={[
@@ -273,24 +413,24 @@ export default function JournalScreen() {
                       None
                     </Text>
                   </TouchableOpacity>
-                  {Resolves.map((Resolve) => (
+                  {Resolves && Resolves.map((Resolve) => (
                     <TouchableOpacity
-                      key={resolve.id}
+                      key={Resolve.id}
                       style={[
                         styles.paktChip,
                         {
-                          backgroundColor: selectedPaktId === resolve.id ? colors.primary : colors.background,
+                          backgroundColor: selectedPaktId === Resolve.id ? colors.primary : colors.background,
                         },
                       ]}
-                      onPress={() => setSelectedPaktId(resolve.id)}
+                      onPress={() => setSelectedPaktId(Resolve.id)}
                     >
                       <Text
                         style={[
                           styles.paktChipText,
-                          { color: selectedPaktId === resolve.id ? '#FFFFFF' : colors.text },
+                          { color: selectedPaktId === Resolve.id ? '#FFFFFF' : colors.text },
                         ]}
                       >
-                        {translateResolveName(resolve.name)}
+                        {translateResolveName(Resolve.name)}
                       </Text>
                     </TouchableOpacity>
                   ))}
@@ -304,11 +444,11 @@ export default function JournalScreen() {
                   <TouchableOpacity
                     style={[
                       styles.moodOption,
-                      { backgroundColor: mood === '' ? colors.primary : colors.background },
+                      { backgroundColor: !mood || mood === '' ? colors.primary : colors.background },
                     ]}
                     onPress={() => setMood('')}
                   >
-                    <Text style={styles.moodOptionText}>{mood === '' ? 'None' : '❌'}</Text>
+                    <Text style={styles.moodOptionText}>✖️</Text>
                   </TouchableOpacity>
                   {moods.map((moodEmoji) => (
                     <TouchableOpacity
@@ -452,6 +592,11 @@ const styles = StyleSheet.create({
   entryDate: {
     fontSize: 12,
     fontWeight: '500',
+  },
+  entryTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 12,
   },
   entryActions: {
     flexDirection: 'row',

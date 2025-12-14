@@ -5,6 +5,7 @@ export interface JournalEntry {
   user_id: string;
   pakt_id?: string;
   date: string;
+  title?: string;
   mood?: string;
   thoughts: string;
   created_at: string;
@@ -15,6 +16,7 @@ export interface JournalEntryInsert {
   user_id: string;
   pakt_id?: string;
   date: string;
+  title?: string;
   mood?: string;
   thoughts: string;
 }
