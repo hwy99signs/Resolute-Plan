@@ -170,6 +170,11 @@
     "quickActions": "Acciones Rápidas",
     "viewAllNotifications": "Ver todas tus notificaciones",
     "successRate": "Tasa de Éxito",
+    "selectImage": "Seleccionar imagen",
+    "chooseOption": "Elige una opción",
+    "takePhoto": "Tomar foto",
+    "chooseFromGallery": "Elegir de la galería",
+    "cancel": "Cancelar",
     "noResolvesInCategory": "No hay Resoluciones en esta categoría",
     "total": "total",
     "done": "Hecho",
@@ -274,7 +279,7 @@
     "profile": "Perfil"
   },
   "auth": {
-    "title": "Resolve",
+    "title": "Resolute Plan",
     "createAccount": "Crea tu Cuenta",
     "welcomeBack": "Bienvenido de nuevo",
     "fullName": "Nombre Completo (Opcional)",
@@ -299,7 +304,7 @@
     "failedToAuthenticate": "Error al autenticar. Por favor intenta de nuevo."
   },
   "welcome": {
-    "title": "Resolve",
+    "title": "Resolute Plan",
     "subtitle": "Seguimiento Inteligente de Compromisos",
     "description": "Haz compromisos. Rastrea el progreso. Logra tus objetivos con inteligencia.",
     "activeUsers": "Usuarios Activos",

@@ -169,7 +169,14 @@
     "features": "Features",
     "quickActions": "Quick Actions",
     "viewAllNotifications": "View all your notifications",
-    "successRate": "Success Rate"
+    "successRate": "Success Rate",
+    "selectImage": "Select Image",
+    "chooseOption": "Choose an option",
+    "takePhoto": "Take Photo",
+    "chooseFromGallery": "Choose from Gallery",
+    "cancel": "Cancel",
+    "imageUpdateTitle": "Success",
+    "imageUpdateMessage": "Profile image updated successfully!"
   },
   "insights": {
     "title": "Insights",
@@ -269,7 +276,7 @@
     "profile": "Profile"
   },
   "auth": {
-    "title": "Resolve",
+    "title": "Resolute Plan",
     "createAccount": "Create Your Account",
     "welcomeBack": "Welcome Back",
     "fullName": "Full Name (Optional)",
@@ -294,7 +301,7 @@
     "failedToAuthenticate": "Failed to authenticate. Please try again."
   },
   "welcome": {
-    "title": "Resolve",
+    "title": "Resolute Plan",
     "subtitle": "Smart Commitment Tracking",
     "description": "Make commitments. Track progress. Achieve your goals with intelligence.",
     "activeUsers": "Active Users",
