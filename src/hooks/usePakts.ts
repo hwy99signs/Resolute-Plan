@@ -147,3 +147,12 @@ export function useResolveStats() {
   return { stats, loading, error };
 }
 
+// Alias for useResolves that returns Resolves (capitalized) for compatibility
+export function usePakts() {
+  const { resolves, ...rest } = useResolves();
+  return {
+    Resolves: resolves,
+    ...rest,
+  };
+}
+
