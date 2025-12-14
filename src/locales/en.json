@@ -166,7 +166,10 @@
     "changeAppLanguage": "Change app language",
     "memberSince": "Member since",
     "committedToGrowth": "Committed to growth and achieving my goals one Resolve at a time.",
-    "features": "Features"
+    "features": "Features",
+    "quickActions": "Quick Actions",
+    "viewAllNotifications": "View all your notifications",
+    "successRate": "Success Rate"
   },
   "insights": {
     "title": "Insights",
