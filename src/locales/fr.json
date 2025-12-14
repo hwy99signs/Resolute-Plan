@@ -274,7 +274,7 @@
     "profile": "Profil"
   },
   "auth": {
-    "title": "ResolveIQ",
+    "title": "Resolve",
     "createAccount": "Créer votre Compte",
     "welcomeBack": "Bon retour",
     "fullName": "Nom Complet (Optionnel)",
@@ -299,7 +299,7 @@
     "failedToAuthenticate": "Échec de l'authentification. Veuillez réessayer."
   },
   "welcome": {
-    "title": "ResolveIQ",
+    "title": "Resolve",
     "subtitle": "Suivi Intelligent des Engagements",
     "description": "Prenez des engagements. Suivez votre progression. Atteignez vos objectifs avec intelligence.",
     "activeUsers": "Utilisateurs Actifs",

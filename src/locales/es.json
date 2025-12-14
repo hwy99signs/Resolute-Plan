@@ -274,7 +274,7 @@
     "profile": "Perfil"
   },
   "auth": {
-    "title": "ResolveIQ",
+    "title": "Resolve",
     "createAccount": "Crea tu Cuenta",
     "welcomeBack": "Bienvenido de nuevo",
     "fullName": "Nombre Completo (Opcional)",
@@ -299,7 +299,7 @@
     "failedToAuthenticate": "Error al autenticar. Por favor intenta de nuevo."
   },
   "welcome": {
-    "title": "ResolveIQ",
+    "title": "Resolve",
     "subtitle": "Seguimiento Inteligente de Compromisos",
     "description": "Haz compromisos. Rastrea el progreso. Logra tus objetivos con inteligencia.",
     "activeUsers": "Usuarios Activos",

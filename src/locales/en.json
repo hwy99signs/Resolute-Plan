@@ -266,7 +266,7 @@
     "profile": "Profile"
   },
   "auth": {
-    "title": "ResolveIQ",
+    "title": "Resolve",
     "createAccount": "Create Your Account",
     "welcomeBack": "Welcome Back",
     "fullName": "Full Name (Optional)",
@@ -291,7 +291,7 @@
     "failedToAuthenticate": "Failed to authenticate. Please try again."
   },
   "welcome": {
-    "title": "ResolveIQ",
+    "title": "Resolve",
     "subtitle": "Smart Commitment Tracking",
     "description": "Make commitments. Track progress. Achieve your goals with intelligence.",
     "activeUsers": "Active Users",

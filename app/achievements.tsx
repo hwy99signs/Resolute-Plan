@@ -7,14 +7,10 @@ import { useAchievements } from '../src/hooks/useAchievements';
 import { useTheme } from '../src/contexts/ThemeContext';
 import { useLanguage } from '../src/contexts/LanguageContext';
 import BottomTabBar from '../src/components/BottomTabBar';
+import { wp, rf, rp, getSpacing, getIconSize, isSmallScreen } from '../src/utils/responsive';
 
 // Dark mode background color for comparison
 const DARK_BG = '#121212';
-
-const { width: screenWidth } = Dimensions.get('window');
-const CARD_GAP = 16; // Increased spacing between cards
-const HORIZONTAL_PADDING = 24;
-const cardWidth = (screenWidth - (HORIZONTAL_PADDING * 2) - (CARD_GAP * 2)) / 3;
 
 export default function AchievementScreen() {
   const router = useRouter();
@@ -22,10 +18,16 @@ export default function AchievementScreen() {
   const { colors } = useTheme();
   const { t } = useLanguage();
 
+  // Get screen width for responsive calculations
+  const screenWidth = Dimensions.get('window').width;
+  const cardGap = getSpacing(16);
+  const horizontalPadding = rp(24);
+  const cardWidth = (screenWidth - (horizontalPadding * 2) - (cardGap * 2)) / 3;
+
   // Animated values for collapsible header
   const scrollY = useRef(new Animated.Value(0)).current;
-  const HEADER_MAX_HEIGHT = 180;
-  const HEADER_MIN_HEIGHT = 80;
+  const HEADER_MAX_HEIGHT = rp(180);
+  const HEADER_MIN_HEIGHT = rp(80);
   const HEADER_SCROLL_DISTANCE = HEADER_MAX_HEIGHT - HEADER_MIN_HEIGHT;
   
   // Animated header styles
@@ -53,9 +55,11 @@ export default function AchievementScreen() {
     extrapolate: 'clamp',
   });
   
+  const baseTitleSize = rf(32);
+  const minTitleSize = rf(20);
   const titleFontSize = scrollY.interpolate({
     inputRange: [0, HEADER_SCROLL_DISTANCE],
-    outputRange: [32, 20],
+    outputRange: [baseTitleSize, minTitleSize],
     extrapolate: 'clamp',
   });
   
@@ -215,7 +219,7 @@ export default function AchievementScreen() {
               justifyContent: 'center',
             }}
           >
-            <ArrowLeft size={24} color="#FFFFFF" />
+            <ArrowLeft size={getIconSize(24)} color="#FFFFFF" />
           </Animated.View>
         </TouchableOpacity>
         
@@ -225,6 +229,9 @@ export default function AchievementScreen() {
               styles.headerTitle,
               { fontSize: titleFontSize }
             ]}
+            numberOfLines={1}
+            adjustsFontSizeToFit
+            minimumFontScale={0.8}
           >
             {t('achievements.title')}
           </Animated.Text>
@@ -238,7 +245,12 @@ export default function AchievementScreen() {
               }),
             }}
           >
-            <Text style={styles.headerSubtitle}>
+            <Text 
+              style={styles.headerSubtitle}
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              minimumFontScale={0.85}
+            >
               {earnedCount} {t('achievements.ofEarned')} {totalBadges} {t('achievements.earned')}
             </Text>
           </Animated.View>
@@ -269,7 +281,7 @@ export default function AchievementScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={[
           styles.scrollContent,
-          { paddingTop: HEADER_MAX_HEIGHT + 24 } // Add space for header + extra spacing
+          { paddingTop: HEADER_MAX_HEIGHT + rp(24) } // Add space for header + extra spacing
         ]}
         onScroll={Animated.event(
           [{ nativeEvent: { contentOffset: { y: scrollY } } }],
@@ -281,12 +293,12 @@ export default function AchievementScreen() {
         {earnedBadges.length > 0 && (
           <View style={[styles.section, { marginTop: 32 }]}>
             <View style={styles.sectionHeader}>
-              <Trophy size={24} color={colors.primary} />
+              <Trophy size={getIconSize(24)} color={colors.primary} />
               <Text style={[styles.sectionTitle, { color: colors.text }]}>{t('achievements.earnedBadges')}</Text>
             </View>
           
           <View style={styles.badgesGrid}>
-            {earnedBadges.map((badge) => {
+            {earnedBadges.map((badge, index) => {
               const IconComponent = badge.icon;
               return (
                 <View 
@@ -297,6 +309,9 @@ export default function AchievementScreen() {
                       backgroundColor: badge.bgColor,
                       borderColor: badge.glow,
                       borderWidth: isDarkMode ? 1 : 0,
+                      width: cardWidth,
+                      marginRight: (index % 3 === 2) ? 0 : cardGap,
+                      marginBottom: cardGap,
                     }
                   ]}
                 >
@@ -309,10 +324,24 @@ export default function AchievementScreen() {
                       }
                     ]}
                   >
-                    <IconComponent size={36} color={badge.iconColor} strokeWidth={2.5} />
+                    <IconComponent size={getIconSize(36)} color={badge.iconColor} strokeWidth={2.5} />
                   </View>
-                  <Text style={[styles.badgeTitle, { color: colors.text }]}>{badge.title}</Text>
-                  <Text style={[styles.badgeDate, { color: colors.textSecondary }]}>{badge.date}</Text>
+                  <Text 
+                    style={[styles.badgeTitle, { color: colors.text }]}
+                    numberOfLines={2}
+                    adjustsFontSizeToFit
+                    minimumFontScale={0.8}
+                  >
+                    {badge.title}
+                  </Text>
+                  <Text 
+                    style={[styles.badgeDate, { color: colors.textSecondary }]}
+                    numberOfLines={1}
+                    adjustsFontSizeToFit
+                    minimumFontScale={0.85}
+                  >
+                    {badge.date}
+                  </Text>
                 </View>
               );
             })}
@@ -324,7 +353,7 @@ export default function AchievementScreen() {
         {lockedBadges.length > 0 && (
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
-              <Lock size={24} color={colors.textSecondary} />
+              <Lock size={getIconSize(24)} color={colors.textSecondary} />
               <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>{t('achievements.lockedBadges')}</Text>
             </View>
           
@@ -348,21 +377,36 @@ export default function AchievementScreen() {
                       borderColor: isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)',
                       borderWidth: 1,
                       opacity: 0.7,
+                      width: cardWidth,
+                      marginRight: (index % 3 === 2) ? 0 : cardGap,
+                      marginBottom: cardGap,
                     }
                   ]}
                 >
                   <View style={[styles.lockedBadgeIconContainer, { backgroundColor: lockedIconBg }]}>
                     <IconComponent 
-                      size={36} 
+                      size={getIconSize(36)} 
                       color={isDarkMode ? 'rgba(255, 255, 255, 0.3)' : 'rgba(0, 0, 0, 0.3)'} 
                       strokeWidth={2.5} 
                     />
                     <View style={styles.lockOverlay}>
-                      <Lock size={20} color={isDarkMode ? 'rgba(255, 255, 255, 0.5)' : 'rgba(0, 0, 0, 0.4)'} />
+                      <Lock size={getIconSize(20)} color={isDarkMode ? 'rgba(255, 255, 255, 0.5)' : 'rgba(0, 0, 0, 0.4)'} />
                     </View>
                   </View>
-                  <Text style={[styles.lockedBadgeTitle, { color: colors.textSecondary }]}>{badge.title}</Text>
-                  <Text style={[styles.lockedBadgeStatus, { color: colors.textSecondary }]} numberOfLines={2}>
+                  <Text 
+                    style={[styles.lockedBadgeTitle, { color: colors.textSecondary }]}
+                    numberOfLines={2}
+                    adjustsFontSizeToFit
+                    minimumFontScale={0.8}
+                  >
+                    {badge.title}
+                  </Text>
+                  <Text 
+                    style={[styles.lockedBadgeStatus, { color: colors.textSecondary }]} 
+                    numberOfLines={2}
+                    adjustsFontSizeToFit
+                    minimumFontScale={0.85}
+                  >
                     {badge.status}
                   </Text>
                 </View>
@@ -375,7 +419,12 @@ export default function AchievementScreen() {
         {/* Motivational Message - At bottom of scrollable content */}
         <View style={[styles.motivationCard, { backgroundColor: colors.surface }]}>
           <Text style={styles.motivationEmoji}>🌟</Text>
-          <Text style={[styles.motivationText, { color: colors.textSecondary }]}>
+          <Text 
+            style={[styles.motivationText, { color: colors.textSecondary }]}
+            numberOfLines={3}
+            adjustsFontSizeToFit
+            minimumFontScale={0.85}
+          >
             Keep going! Complete more Resolves to unlock new badges
           </Text>
         </View>
@@ -400,8 +449,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#F4F4F6',
   },
   loadingText: {
-    marginTop: 16,
-    fontSize: 16,
+    marginTop: getSpacing(16),
+    fontSize: rf(16),
     color: '#666',
   },
   header: {
@@ -415,8 +464,8 @@ const styles = StyleSheet.create({
   },
   backButton: {
     position: 'absolute',
-    top: 16,
-    left: 24,
+    top: rp(16),
+    left: rp(24),
     zIndex: 10,
   },
   headerContent: {
@@ -425,58 +474,56 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   headerTitle: {
-    fontSize: 32,
+    fontSize: rf(32),
     fontWeight: 'bold',
     color: '#FFFFFF',
-    marginBottom: 8,
+    marginBottom: getSpacing(8),
   },
   headerSubtitle: {
-    fontSize: 16,
+    fontSize: rf(16),
     color: 'rgba(255, 255, 255, 0.9)',
   },
   progressBarContainer: {
-    height: 8,
+    height: rp(8),
     backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    borderRadius: 4,
+    borderRadius: rp(4),
     overflow: 'hidden',
   },
   progressBar: {
     height: '100%',
     backgroundColor: '#FFD88A',
-    borderRadius: 4,
+    borderRadius: rp(4),
   },
   scrollView: {
     flex: 1,
   },
   scrollContent: {
-    padding: HORIZONTAL_PADDING,
-    paddingBottom: 40,
+    padding: rp(24),
+    paddingBottom: rp(40),
   },
   section: {
-    marginBottom: 40,
-    marginTop: 8, // Add spacing between sections
+    marginBottom: getSpacing(40),
+    marginTop: getSpacing(8),
   },
   sectionHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 20,
-    gap: 12,
+    marginBottom: getSpacing(20),
+    gap: getSpacing(12),
   },
   sectionTitle: {
-    fontSize: 20,
+    fontSize: rf(20),
     fontWeight: '700',
   },
   badgesGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    justifyContent: 'space-between',
-    gap: CARD_GAP,
+    justifyContent: 'flex-start',
   },
   badgeCard: {
-    width: cardWidth,
     aspectRatio: 0.85,
-    borderRadius: 24,
-    padding: 16,
+    borderRadius: rp(24),
+    padding: rp(16),
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#000',
@@ -484,15 +531,14 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.15,
     shadowRadius: 20,
     elevation: 8,
-    marginBottom: 4,
   },
   badgeIconContainer: {
-    width: 68,
-    height: 68,
-    borderRadius: 20,
+    width: rp(68),
+    height: rp(68),
+    borderRadius: rp(20),
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 12,
+    marginBottom: getSpacing(12),
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
@@ -500,24 +546,23 @@ const styles = StyleSheet.create({
     elevation: 6,
   },
   badgeTitle: {
-    fontSize: 14,
+    fontSize: rf(14),
     fontWeight: '700',
     textAlign: 'center',
-    marginBottom: 4,
+    marginBottom: getSpacing(4),
     letterSpacing: -0.2,
-    lineHeight: 18,
+    lineHeight: rf(18),
   },
   badgeDate: {
-    fontSize: 11,
+    fontSize: rf(11),
     textAlign: 'center',
     fontWeight: '500',
     opacity: 0.8,
   },
   lockedBadgeCard: {
-    width: cardWidth,
     aspectRatio: 0.85,
-    borderRadius: 24,
-    padding: 16,
+    borderRadius: rp(24),
+    padding: rp(16),
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#000',
@@ -525,39 +570,38 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.08,
     shadowRadius: 12,
     elevation: 3,
-    marginBottom: 4,
   },
   lockedBadgeIconContainer: {
-    width: 68,
-    height: 68,
-    borderRadius: 20,
+    width: rp(68),
+    height: rp(68),
+    borderRadius: rp(20),
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 12,
+    marginBottom: getSpacing(12),
     position: 'relative',
   },
   lockedBadgeTitle: {
-    fontSize: 14,
+    fontSize: rf(14),
     fontWeight: '600',
     textAlign: 'center',
-    marginBottom: 4,
+    marginBottom: getSpacing(4),
     letterSpacing: -0.2,
-    lineHeight: 18,
+    lineHeight: rf(18),
   },
   lockedBadgeStatus: {
-    fontSize: 11,
+    fontSize: rf(11),
     textAlign: 'center',
     fontWeight: '500',
     opacity: 0.7,
-    lineHeight: 14,
+    lineHeight: rf(14),
   },
   lockOverlay: {
     position: 'absolute',
-    bottom: -4,
-    right: -4,
-    width: 24,
-    height: 24,
-    borderRadius: 12,
+    bottom: -rp(4),
+    right: -rp(4),
+    width: rp(24),
+    height: rp(24),
+    borderRadius: rp(12),
     backgroundColor: 'rgba(0, 0, 0, 0.6)',
     alignItems: 'center',
     justifyContent: 'center',
@@ -566,25 +610,25 @@ const styles = StyleSheet.create({
   },
   motivationCard: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 24,
-    padding: 28,
+    borderRadius: rp(24),
+    padding: rp(28),
     alignItems: 'center',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.08,
     shadowRadius: 12,
     elevation: 4,
-    marginTop: 64,
+    marginTop: getSpacing(64),
   },
   motivationEmoji: {
-    fontSize: 56,
-    marginBottom: 16,
+    fontSize: rf(56),
+    marginBottom: getSpacing(16),
   },
   motivationText: {
-    fontSize: 16,
+    fontSize: rf(16),
     color: '#666',
     textAlign: 'center',
-    lineHeight: 24,
+    lineHeight: rf(24),
     fontWeight: '500',
   },
 });

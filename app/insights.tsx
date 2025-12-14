@@ -501,20 +501,6 @@ export default function InsightsScreen() {
           </View>
         </View>
 
-        {/* AI Insights Coming Soon */}
-        <View style={styles.section}>
-          <View style={[styles.aiCard, { backgroundColor: colors.surface }]}>
-            <Text style={styles.aiEmoji}>🤖</Text>
-            <Text style={[styles.aiTitle, { color: colors.text }]}>{t('insights.aiInsightsComingSoon')}</Text>
-            <Text style={[styles.aiText, { color: colors.textSecondary }]}>
-              Get personalized suggestions and optimize your Resolve strategy with AI
-            </Text>
-            <TouchableOpacity style={styles.aiButton}>
-              <Text style={styles.aiButtonText}>Join Waitlist</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-
         <View style={{ height: 40 }} />
       </Animated.ScrollView>
       
@@ -760,42 +746,5 @@ const styles = StyleSheet.create({
   },
   consistencyRight: {
     marginLeft: getSpacing(16),
-  },
-  aiCard: {
-    borderRadius: rp(16),
-    padding: rp(20),
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  aiEmoji: {
-    fontSize: rf(40),
-    marginBottom: getSpacing(12),
-  },
-  aiTitle: {
-    fontSize: rf(18),
-    fontWeight: '600',
-    marginBottom: getSpacing(8),
-    textAlign: 'center',
-  },
-  aiText: {
-    fontSize: rf(14),
-    textAlign: 'center',
-    lineHeight: rf(20),
-    marginBottom: getSpacing(16),
-  },
-  aiButton: {
-    backgroundColor: '#9163F2',
-    paddingVertical: rp(14),
-    paddingHorizontal: rp(32),
-    borderRadius: rp(25),
-  },
-  aiButtonText: {
-    color: '#FFFFFF',
-    fontSize: rf(16),
-    fontWeight: '600',
   },
 });
