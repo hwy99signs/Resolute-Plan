@@ -315,7 +315,7 @@ export default function JournalScreen() {
       if (editingEntry) {
         await JournalService.updateEntry(editingEntry.id, {
           user_id: user.id,
-          pakt_id: selectedPaktId || undefined,
+          resolve_id: selectedPaktId || undefined,
           date: entryDate,
           title: title.trim() || undefined,
           mood: mood || undefined,
@@ -325,7 +325,7 @@ export default function JournalScreen() {
       } else {
         const newEntry = await JournalService.createEntry({
           user_id: user.id,
-          pakt_id: selectedPaktId || undefined,
+          resolve_id: selectedPaktId || undefined,
           date: entryDate,
           title: title.trim() || undefined,
           mood: mood || undefined,
@@ -379,7 +379,7 @@ export default function JournalScreen() {
 
   const handleEditEntry = (entry: JournalEntry) => {
     setEditingEntry(entry);
-    setSelectedPaktId(entry.pakt_id || '');
+    setSelectedPaktId(entry.resolve_id || '');
     setEntryDate(entry.date);
     setTitle(entry.title || '');
     setMood(entry.mood || '');
@@ -609,7 +609,7 @@ export default function JournalScreen() {
         month: 'long',
         day: 'numeric'
       });
-      const paktName = entry.pakt_id ? getPaktName(entry.pakt_id) : null;
+      const paktName = entry.resolve_id ? getPaktName(entry.resolve_id) : null;
 
       // Process media for PDF with error handling and timeout
       let mediaHTML = '';
@@ -1093,10 +1093,10 @@ export default function JournalScreen() {
                   <Text style={[styles.entryTitle, { color: colors.text }]}>{entry.title}</Text>
                 )}
 
-                {entry.pakt_id && (
+                {entry.resolve_id && (
                   <View style={[styles.paktTag, { backgroundColor: `${colors.primary}20` }]}>
                     <Text style={[styles.paktTagText, { color: colors.primary }]}>
-                      {t('journal.linkedToResolve')}: {getPaktName(entry.pakt_id)}
+                      {t('journal.linkedToResolve')}: {getPaktName(entry.resolve_id)}
                     </Text>
                   </View>
                 )}

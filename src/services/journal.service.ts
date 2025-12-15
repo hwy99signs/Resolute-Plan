@@ -10,7 +10,7 @@ export interface JournalMedia {
 export interface JournalEntry {
   id: string;
   user_id: string;
-  pakt_id?: string;
+  resolve_id?: string;
   date: string;
   title?: string;
   mood?: string;
@@ -22,7 +22,7 @@ export interface JournalEntry {
 
 export interface JournalEntryInsert {
   user_id: string;
-  pakt_id?: string;
+  resolve_id?: string;
   date: string;
   title?: string;
   mood?: string;
@@ -62,12 +62,12 @@ export class JournalService {
   /**
    * Get journal entries for a specific Resolve
    */
-  static async getPaktEntries(userId: string, paktId: string): Promise<JournalEntry[]> {
+  static async getResolveEntries(userId: string, resolveId: string): Promise<JournalEntry[]> {
     const { data, error } = await supabase
       .from('journal_entries')
       .select('*')
       .eq('user_id', userId)
-      .eq('pakt_id', paktId)
+      .eq('resolve_id', resolveId)
       .order('date', { ascending: false });
 
     if (error) throw error;
