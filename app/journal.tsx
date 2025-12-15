@@ -17,6 +17,30 @@ import * as DocumentPicker from 'expo-document-picker';
 import * as FileSystem from 'expo-file-system';
 import * as FileSystemLegacy from 'expo-file-system/legacy';
 import { StorageService } from '../src/services/storage.service';
+import { DeleteConfirmationModal } from '../src/components/DeleteConfirmationModal';
+
+// Debug logging helper
+const debugLog = async (location: string, message: string, data: any, hypothesisId: string) => {
+  const logEntry = {
+    location,
+    message,
+    data,
+    timestamp: Date.now(),
+    sessionId: 'debug-session',
+    runId: 'run1',
+    hypothesisId
+  };
+  const logLine = JSON.stringify(logEntry) + '\n';
+  console.log(`[DEBUG] ${location}: ${message}`, data);
+  try {
+    // Write to app document directory - we'll read from console for now
+    const logPath = FileSystem.documentDirectory + 'pdf_debug.log';
+    const existingContent = await FileSystem.readAsStringAsync(logPath).catch(() => '');
+    await FileSystem.writeAsStringAsync(logPath, existingContent + logLine, { encoding: FileSystem.EncodingType.UTF8 });
+  } catch (e) {
+    // Console logging is primary - file is secondary
+  }
+};
 
 export default function JournalScreen() {
   const router = useRouter();
@@ -38,6 +62,9 @@ export default function JournalScreen() {
   const [uploadingMedia, setUploadingMedia] = useState(false);
   const [showMediaPicker, setShowMediaPicker] = useState(false);
   const [mediaUploadProgress, setMediaUploadProgress] = useState<Record<number, number>>({});
+  const [deleteModalVisible, setDeleteModalVisible] = useState(false);
+  const [entryToDelete, setEntryToDelete] = useState<JournalEntry | null>(null);
+  const [sharing, setSharing] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -87,9 +114,53 @@ export default function JournalScreen() {
 
         // Upload new media
         if (mediaItem.url && mediaItem.url.startsWith('file://')) {
-          const mimeType = mediaItem.type === 'image' ? 'image/jpeg' :
-                          mediaItem.type === 'video' ? 'video/mp4' :
-                          'application/octet-stream';
+          // Determine MIME type based on file extension and type
+          let mimeType = 'application/octet-stream';
+          
+          if (mediaItem.type === 'image') {
+            // Determine image MIME type from extension
+            const ext = mediaItem.name.split('.').pop()?.toLowerCase();
+            const imageMimeTypes: Record<string, string> = {
+              jpg: 'image/jpeg',
+              jpeg: 'image/jpeg',
+              png: 'image/png',
+              gif: 'image/gif',
+              webp: 'image/webp',
+              bmp: 'image/bmp',
+            };
+            mimeType = imageMimeTypes[ext || ''] || 'image/jpeg';
+          } else if (mediaItem.type === 'video') {
+            // Determine video MIME type from extension
+            const ext = mediaItem.name.split('.').pop()?.toLowerCase();
+            const videoMimeTypes: Record<string, string> = {
+              mp4: 'video/mp4',
+              mov: 'video/quicktime',
+              avi: 'video/x-msvideo',
+              mkv: 'video/x-matroska',
+              webm: 'video/webm',
+              m4v: 'video/x-m4v',
+            };
+            mimeType = videoMimeTypes[ext || ''] || 'video/mp4';
+          } else if (mediaItem.type === 'document') {
+            // Determine document MIME type from extension
+            const ext = mediaItem.name.split('.').pop()?.toLowerCase();
+            const documentMimeTypes: Record<string, string> = {
+              pdf: 'application/pdf',
+              doc: 'application/msword',
+              docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+              txt: 'text/plain',
+              rtf: 'application/rtf',
+              odt: 'application/vnd.oasis.opendocument.text',
+              // Image documents
+              jpg: 'image/jpeg',
+              jpeg: 'image/jpeg',
+              png: 'image/png',
+              gif: 'image/gif',
+              webp: 'image/webp',
+              bmp: 'image/bmp',
+            };
+            mimeType = documentMimeTypes[ext || ''] || 'application/pdf';
+          }
           
           // Simulate progress updates during upload (smooth progress)
           let currentProgress = 0;
@@ -113,9 +184,14 @@ export default function JournalScreen() {
             clearInterval(progressInterval);
             setMediaUploadProgress(prev => ({ ...prev, [i]: 100 }));
 
+            // Note: Video thumbnail generation during upload is complex and may fail
+            // Thumbnails will be extracted during PDF generation if needed
+            // For now, keep existing thumbnail if available
+
             uploadedMedia.push({
               ...mediaItem,
               url: uploadedUrl,
+              thumbnail: thumbnailUrl || mediaItem.thumbnail,
             });
           } catch (error) {
             clearInterval(progressInterval);
@@ -274,27 +350,30 @@ export default function JournalScreen() {
     }
   };
 
-  const handleDeleteEntry = async (entry: JournalEntry) => {
-    Alert.alert(
-      'Delete Entry',
-      'Are you sure you want to delete this entry?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await JournalService.deleteEntry(entry.id);
-              await loadEntries();
-            } catch (error) {
-              console.error('Error deleting entry:', error);
-              Alert.alert('Error', 'Failed to delete entry');
-            }
-          },
-        },
-      ]
-    );
+  const handleDeleteEntry = (entry: JournalEntry) => {
+    setEntryToDelete(entry);
+    setDeleteModalVisible(true);
+  };
+
+  const confirmDeleteEntry = async () => {
+    if (!entryToDelete) return;
+    
+    try {
+      await JournalService.deleteEntry(entryToDelete.id);
+      await loadEntries();
+      setDeleteModalVisible(false);
+      setEntryToDelete(null);
+    } catch (error) {
+      console.error('Error deleting entry:', error);
+      Alert.alert('Error', 'Failed to delete entry');
+      setDeleteModalVisible(false);
+      setEntryToDelete(null);
+    }
+  };
+
+  const cancelDeleteEntry = () => {
+    setDeleteModalVisible(false);
+    setEntryToDelete(null);
   };
 
   const handleEditEntry = (entry: JournalEntry) => {
@@ -329,8 +408,93 @@ export default function JournalScreen() {
     return Resolve?.name;
   };
 
-  // Helper function to convert image URL to base64 data URI
-  const convertImageToBase64 = async (url: string): Promise<string | null> => {
+  // Helper function to extract a video frame as base64
+  const extractVideoFrame = async (videoUrl: string): Promise<string | null> => {
+    try {
+      if (Platform.OS === 'web') {
+        // For web, use HTML5 video element to extract frame
+        return new Promise((resolve) => {
+          const video = document.createElement('video');
+          video.crossOrigin = 'anonymous';
+          video.preload = 'metadata';
+          video.muted = true; // Mute to allow autoplay
+          video.playsInline = true;
+          video.src = videoUrl;
+          
+          let resolved = false;
+          
+          const cleanup = () => {
+            if (!resolved) {
+              resolved = true;
+              video.remove();
+            }
+          };
+          
+          const extractFrame = () => {
+            try {
+              if (video.videoWidth > 0 && video.videoHeight > 0) {
+                const canvas = document.createElement('canvas');
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                const ctx = canvas.getContext('2d');
+                if (ctx) {
+                  ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+                  const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+                  cleanup();
+                  resolve(dataUrl);
+                  return;
+                }
+              }
+            } catch (error) {
+              console.error('Error extracting video frame:', error);
+            }
+            cleanup();
+            resolve(null);
+          };
+          
+          video.onloadedmetadata = () => {
+            try {
+              video.currentTime = 0.1; // Seek to 0.1 seconds to get a frame
+            } catch (error) {
+              console.error('Error seeking video:', error);
+              cleanup();
+              resolve(null);
+            }
+          };
+          
+          video.onseeked = extractFrame;
+          video.onloadeddata = extractFrame;
+          
+          video.onerror = (error) => {
+            console.error('Video load error:', error);
+            cleanup();
+            resolve(null);
+          };
+          
+          // Timeout after 10 seconds
+          setTimeout(() => {
+            if (!resolved) {
+              cleanup();
+              resolve(null);
+            }
+          }, 10000);
+          
+          // Try to load the video
+          video.load();
+        });
+      } else {
+        // For native, we can't easily extract frames without expo-av
+        // Return null and rely on stored thumbnails or placeholders
+        return null;
+      }
+    } catch (error) {
+      console.error('Error extracting video frame:', error);
+      return null;
+    }
+  };
+
+  // Helper function to convert any media URL to base64 data URI
+  const convertMediaToBase64 = async (url: string, mimeType?: string): Promise<string | null> => {
     try {
       if (url.startsWith('data:')) {
         return url; // Already a data URI
@@ -427,72 +591,254 @@ export default function JournalScreen() {
   };
 
   const generateJournalPDFHTML = async (entry: JournalEntry): Promise<string> => {
-    const entryDate = new Date(entry.date).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    });
-    const paktName = entry.pakt_id ? getPaktName(entry.pakt_id) : null;
+    // #region agent log
+    await debugLog('journal.tsx:570', 'generateJournalPDFHTML ENTRY', { hasMedia: !!entry.media, mediaCount: entry.media?.length || 0, entryId: entry.id }, 'A,B,C');
+    // #endregion
+    try {
+      // Always generate base content first
+      const entryDate = new Date(entry.date).toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+      const paktName = entry.pakt_id ? getPaktName(entry.pakt_id) : null;
 
-    // Process media for PDF
-    let mediaHTML = '';
-    if (entry.media && entry.media.length > 0) {
-      const mediaItems = await Promise.all(
-        entry.media.map(async (mediaItem) => {
-          if (mediaItem.type === 'image') {
-            const base64Data = await convertImageToBase64(mediaItem.url);
-            if (base64Data) {
-              return `
-                <div class="media-item">
-                  <div class="media-label">Image: ${mediaItem.name}</div>
-                  <img src="${base64Data}" alt="${mediaItem.name}" class="media-image" />
-                </div>
-              `;
-            } else {
-              return `
-                <div class="media-item">
-                  <div class="media-label">Image: ${mediaItem.name}</div>
-                  <div class="media-placeholder">Image could not be loaded</div>
-                </div>
-              `;
-            }
-          } else if (mediaItem.type === 'video') {
-            return `
-              <div class="media-item">
-                <div class="media-label">Video: ${mediaItem.name}</div>
-                <div class="media-placeholder">
-                  <div class="media-icon">🎥</div>
-                  <div>Video attachment: ${mediaItem.name}</div>
-                  ${mediaItem.url ? `<div class="media-link">URL: ${mediaItem.url}</div>` : ''}
-                </div>
-              </div>
-            `;
-          } else if (mediaItem.type === 'document') {
-            return `
-              <div class="media-item">
-                <div class="media-label">Document: ${mediaItem.name}</div>
-                <div class="media-placeholder">
-                  <div class="media-icon">📄</div>
-                  <div>Document attachment: ${mediaItem.name}</div>
-                  ${mediaItem.url ? `<div class="media-link">URL: ${mediaItem.url}</div>` : ''}
-                </div>
-              </div>
-            `;
+      // Process media for PDF with error handling and timeout
+      let mediaHTML = '';
+      
+      // TEMPORARY FIX: Always show placeholders instead of embedding media
+      // This prevents large base64 data from breaking PDF generation
+      const EMBED_MEDIA_IN_PDF = false; // Set to true to try embedding (may cause blank PDFs)
+      
+      if (entry.media && entry.media.length > 0) {
+        // #region agent log
+        await debugLog('journal.tsx:582', 'MEDIA PROCESSING START', { mediaCount: entry.media.length }, 'A');
+        // #endregion
+        try {
+          console.log('Processing media for PDF:', entry.media.length, 'items');
+          
+          // Process media with timeout
+          const mediaProcessingPromise = Promise.allSettled(
+            entry.media.map(async (mediaItem) => {
+              try {
+                console.log('Processing media item:', mediaItem.type, mediaItem.name);
+                if (mediaItem.type === 'image') {
+                  if (EMBED_MEDIA_IN_PDF) {
+                    const base64Data = await convertMediaToBase64(mediaItem.url);
+                    // #region agent log
+                    await debugLog('journal.tsx:625', 'IMAGE BASE64 RESULT', { hasBase64: !!base64Data, base64Length: base64Data?.length, base64Prefix: base64Data?.substring(0, 50) }, 'C');
+                    // #endregion
+                    // Limit base64 size to prevent PDF from being too large (max 2MB base64 = ~1.5MB image)
+                    const MAX_BASE64_SIZE = 2000000; // 2MB
+                    if (base64Data && base64Data.length < MAX_BASE64_SIZE) {
+                      return `
+                        <div class="media-item">
+                          <div class="media-label">Image: ${mediaItem.name}</div>
+                          <img src="${base64Data}" alt="${mediaItem.name}" class="media-image" />
+                        </div>
+                      `;
+                    }
+                  }
+                  // Show placeholder (either because embedding is disabled or image is too large)
+                  return `
+                    <div class="media-item">
+                      <div class="media-label">Image: ${mediaItem.name}</div>
+                      <div class="media-placeholder">
+                        <div class="media-icon">🖼️</div>
+                        <div>Image: ${mediaItem.name}</div>
+                        <div style="font-size: 12px; margin-top: 8px; color: #9ca3af;">Image attachment</div>
+                      </div>
+                    </div>
+                  `;
+                } else if (mediaItem.type === 'video') {
+                  // Try multiple methods to get a video thumbnail
+                  let videoImage: string | null = null;
+            
+                  // Method 1: Use stored thumbnail if available
+                  if (mediaItem.thumbnail && !mediaItem.thumbnail.startsWith('file://')) {
+                    videoImage = await convertMediaToBase64(mediaItem.thumbnail);
+                    // #region agent log
+                    await debugLog('journal.tsx:654', 'VIDEO THUMBNAIL CONVERTED', { hasVideoImage: !!videoImage, videoImageLength: videoImage?.length }, 'C');
+                    // #endregion
+                  }
+                  
+                  // Method 2: Try to extract a frame from the video URL
+                  if (!videoImage && mediaItem.url) {
+                    // Only try extraction if URL is accessible (not a local file:// that's already uploaded)
+                    if (mediaItem.url.startsWith('http')) {
+                      videoImage = await extractVideoFrame(mediaItem.url);
+                    } else if (mediaItem.url.startsWith('file://')) {
+                      // For local files, try to convert directly (might work for some formats)
+                      // But usually we need to extract a frame
+                      if (Platform.OS === 'web') {
+                        videoImage = await extractVideoFrame(mediaItem.url);
+                      }
+                    }
+                  }
+                  
+                  // Method 3: If we have a local thumbnail file, convert it
+                  if (!videoImage && mediaItem.thumbnail && mediaItem.thumbnail.startsWith('file://')) {
+                    videoImage = await convertMediaToBase64(mediaItem.thumbnail);
+                  }
+                  
+                  // Limit video thumbnail size to prevent PDF from being too large (max 2MB base64)
+                  const MAX_BASE64_SIZE = 2000000; // 2MB
+                  // #region agent log
+                  await debugLog('journal.tsx:677', 'VIDEO THUMBNAIL SIZE CHECK', { hasVideoImage: !!videoImage, videoImageLength: videoImage?.length, maxSize: MAX_BASE64_SIZE, willEmbed: !!(videoImage && videoImage.length < MAX_BASE64_SIZE && EMBED_MEDIA_IN_PDF) }, 'C');
+                  // #endregion
+                  if (EMBED_MEDIA_IN_PDF && videoImage && videoImage.length < MAX_BASE64_SIZE) {
+                    return `
+                      <div class="media-item">
+                        <div class="media-label">Video: ${mediaItem.name}</div>
+                        <div class="video-preview">
+                          <img src="${videoImage}" alt="Video thumbnail: ${mediaItem.name}" class="media-image" />
+                          <div class="video-overlay">
+                            <div class="video-play-icon">▶</div>
+                            <div class="video-label">Video</div>
+                          </div>
+                        </div>
+                      </div>
+                    `;
+                  } else {
+                    // Video thumbnail too large or embedding disabled - show placeholder
+                    return `
+                      <div class="media-item">
+                        <div class="media-label">Video: ${mediaItem.name}</div>
+                        <div class="media-placeholder">
+                          <div class="media-icon">🎥</div>
+                          <div>Video: ${mediaItem.name}</div>
+                          <div style="font-size: 12px; margin-top: 8px; color: #9ca3af;">Video attachment</div>
+                        </div>
+                      </div>
+                    `;
+                  }
+                } else if (mediaItem.type === 'document') {
+                  // Check if document is an image file
+                  const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp'];
+                  const isImageDocument = imageExtensions.some(ext => 
+                    mediaItem.name.toLowerCase().endsWith(ext)
+                  );
+                  
+                  if (isImageDocument && EMBED_MEDIA_IN_PDF) {
+                    // Treat as image and embed, but limit size
+                    const base64Data = await convertMediaToBase64(mediaItem.url);
+                    const MAX_BASE64_SIZE = 2000000; // 2MB
+                    if (base64Data && base64Data.length < MAX_BASE64_SIZE) {
+                      return `
+                        <div class="media-item">
+                          <div class="media-label">Document (Image): ${mediaItem.name}</div>
+                          <img src="${base64Data}" alt="${mediaItem.name}" class="media-image" />
+                        </div>
+                      `;
+                    }
+                  }
+                  
+                  // For non-image documents, show a clean placeholder without URL
+                  return `
+                    <div class="media-item">
+                      <div class="media-label">Document: ${mediaItem.name}</div>
+                      <div class="media-placeholder">
+                        <div class="media-icon">📄</div>
+                        <div>Document: ${mediaItem.name}</div>
+                      </div>
+                    </div>
+                  `;
+                }
+                return '';
+              } catch (mediaError) {
+                console.error('Error processing media item:', mediaError);
+                return `
+                  <div class="media-item">
+                    <div class="media-label">${mediaItem.name}</div>
+                    <div class="media-placeholder">Media could not be loaded</div>
+                  </div>
+                `;
+              }
+            })
+          );
+          
+          // Process with timeout - use Promise.race but handle timeout properly
+          let mediaResults: PromiseSettledResult<string>[];
+          try {
+            mediaResults = await Promise.race([
+              mediaProcessingPromise,
+              new Promise<PromiseSettledResult<string>[]>((resolve) => {
+                setTimeout(() => {
+                  console.warn('Media processing timeout - continuing without media');
+                  // Return empty array of settled results (not just empty array)
+                  resolve([]);
+                }, 10000);
+              })
+            ]);
+          } catch (raceError) {
+            console.error('Promise.race error:', raceError);
+            mediaResults = [];
           }
-          return '';
-        })
-      );
-      mediaHTML = `
-        <div class="media-section">
-          <h3 class="media-section-title">Attachments</h3>
-          <div class="media-container">
-            ${mediaItems.join('')}
-          </div>
-        </div>
-      `;
-    }
+          
+          // #region agent log
+          await debugLog('journal.tsx:714', 'PROMISE.RACE RESULT', { isArray: Array.isArray(mediaResults), length: mediaResults?.length, firstItemType: mediaResults?.[0]?.constructor?.name, hasStatus: !!mediaResults?.[0]?.status, isSettledResult: !!(mediaResults?.[0] && ('status' in mediaResults[0])) }, 'A');
+          // #endregion
+          
+          // Extract successful results - handle both Promise.allSettled results and timeout case
+          // #region agent log
+          await debugLog('journal.tsx:720', 'BEFORE EXTRACTING MEDIA ITEMS', { mediaResultsType: Array.isArray(mediaResults) ? 'array' : typeof mediaResults, mediaResultsLength: mediaResults?.length, firstResultType: mediaResults?.[0] ? typeof mediaResults[0] : 'none', firstResultKeys: mediaResults?.[0] ? Object.keys(mediaResults[0]) : [] }, 'A');
+          // #endregion
+          
+          const mediaItems = (mediaResults || [])
+            .map((result, index) => {
+              // #region agent log
+              debugLog('journal.tsx:725', `PROCESSING RESULT ${index}`, { hasResult: !!result, resultType: typeof result, hasStatus: !!(result && typeof result === 'object' && 'status' in result), resultKeys: result && typeof result === 'object' ? Object.keys(result) : [] }, 'A').catch(() => {});
+              // #endregion
+              
+              // Check if this is a Promise.allSettled result object
+              if (result && typeof result === 'object' && 'status' in result) {
+                if (result.status === 'fulfilled') {
+                  return result.value;
+                } else {
+                  console.error('Media item failed:', result.reason);
+                  return null;
+                }
+              } else {
+                // Timeout case or unexpected format - this shouldn't happen but handle gracefully
+                console.warn('Unexpected media result format:', result);
+                return null;
+              }
+            })
+            .filter(item => item && typeof item === 'string' && item.trim().length > 0) as string[];
+          
+          console.log('Successfully processed', mediaItems.length, 'media items');
+          
+          if (mediaItems.length > 0) {
+            mediaHTML = `
+              <div class="media-section">
+                <h3 class="media-section-title">Attachments</h3>
+                <div class="media-container">
+                  ${mediaItems.join('')}
+                </div>
+              </div>
+            `;
+          } else {
+            console.warn('No media items were successfully processed');
+            // #region agent log
+            await debugLog('journal.tsx:743', 'NO MEDIA ITEMS PROCESSED', { mediaResultsLength: mediaResults?.length }, 'A');
+            // #endregion
+          }
+        } catch (mediaError) {
+          // #region agent log
+          await debugLog('journal.tsx:746', 'MEDIA PROCESSING ERROR', { errorMessage: mediaError?.message }, 'A');
+          // #endregion
+          console.error('Error processing media:', mediaError);
+          // Continue without media if processing fails
+          mediaHTML = '';
+        }
+      } else if (entry.media && entry.media.length > 0) {
+        // #region agent log
+        await debugLog('journal.tsx:752', 'MEDIA SKIPPED FOR TESTING', { mediaCount: entry.media.length }, 'A');
+        // #endregion
+      }
 
-    return `
+      // Generate the HTML - always include journal content even if media fails
+      const html = `
       <!DOCTYPE html>
       <html>
         <head>
@@ -601,53 +947,233 @@ export default function JournalScreen() {
               font-size: 48px;
               margin-bottom: 10px;
             }
-            .media-link {
+            .video-preview {
+              position: relative;
+              display: inline-block;
+              width: 100%;
+            }
+            .video-overlay {
+              position: absolute;
+              top: 50%;
+              left: 50%;
+              transform: translate(-50%, -50%);
+              background-color: rgba(0, 0, 0, 0.7);
+              border-radius: 50%;
+              width: 80px;
+              height: 80px;
+              display: flex;
+              flex-direction: column;
+              align-items: center;
+              justify-content: center;
+              pointer-events: none;
+            }
+            .video-play-icon {
+              font-size: 32px;
+              color: #ffffff;
+              margin-bottom: 4px;
+            }
+            .video-label {
               font-size: 12px;
-              color: #6366f1;
-              margin-top: 10px;
-              word-break: break-all;
+              color: #ffffff;
+              font-weight: 600;
             }
           </style>
         </head>
         <body>
           <div class="header">
-            <div class="title">${entry.title || 'Journal Entry'}</div>
+            <div class="title">${(entry.title || 'Journal Entry').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</div>
             <div class="date">${entryDate}</div>
             <div class="meta">
-              ${paktName ? `<div class="meta-item"><strong>Linked to:</strong> ${paktName}</div>` : ''}
-              ${entry.mood ? `<div class="meta-item"><strong>Mood:</strong> ${entry.mood}</div>` : ''}
+              ${paktName ? `<div class="meta-item"><strong>Linked to:</strong> ${paktName.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</div>` : ''}
+              ${entry.mood ? `<div class="meta-item"><strong>Mood:</strong> ${entry.mood.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</div>` : ''}
             </div>
           </div>
-          ${entry.mood ? `<div class="mood">${entry.mood}</div>` : ''}
+          ${entry.mood ? `<div class="mood">${entry.mood.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</div>` : ''}
           <div class="content">
-            <div class="thoughts">${entry.thoughts}</div>
-            ${mediaHTML}
+            <div class="thoughts">${(entry.thoughts || 'No thoughts recorded.').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</div>
+            ${mediaHTML || ''}
           </div>
         </body>
       </html>
     `;
+      
+      // Validate HTML structure before returning
+      // #region agent log
+      await debugLog('journal.tsx:960', 'HTML GENERATED', { 
+        htmlLength: html.length, 
+        mediaHTMLLength: mediaHTML.length, 
+        hasMediaSection: html.includes('media-section'),
+        hasBodyTag: html.includes('<body>'),
+        hasClosingBodyTag: html.includes('</body>'),
+        hasHtmlTag: html.includes('<html>'),
+        hasClosingHtmlTag: html.includes('</html>'),
+        htmlStart: html.substring(0, 300),
+        htmlEnd: html.substring(Math.max(0, html.length - 300))
+      }, 'ALL');
+      // #endregion
+      
+      if (!html || html.trim().length < 100) {
+        // #region agent log
+        await debugLog('journal.tsx:975', 'HTML VALIDATION FAILED - TOO SHORT', { htmlLength: html?.length }, 'D');
+        // #endregion
+        throw new Error('Generated HTML is too short or empty');
+      }
+      
+      // Check for basic HTML structure
+      if (!html.includes('<html>') || !html.includes('</html>') || !html.includes('<body>') || !html.includes('</body>')) {
+        // #region agent log
+        await debugLog('journal.tsx:981', 'HTML VALIDATION FAILED - INVALID STRUCTURE', { 
+          hasHtml: html.includes('<html>'),
+          hasClosingHtml: html.includes('</html>'),
+          hasBody: html.includes('<body>'),
+          hasClosingBody: html.includes('</body>')
+        }, 'D');
+        // #endregion
+        throw new Error('Generated HTML has invalid structure');
+      }
+      
+      console.log('PDF HTML generated successfully, length:', html.length);
+      // #region agent log
+      await debugLog('journal.tsx:990', 'HTML GENERATION SUCCESS', { htmlLength: html.length }, 'A,B,C,D');
+      // #endregion
+      return html;
+    } catch (error) {
+      // #region agent log
+      await debugLog('journal.tsx:975', 'HTML GENERATION ERROR', { errorMessage: error?.message, errorStack: error?.stack?.substring(0, 200) }, 'E');
+      // #endregion
+      await debugLog('journal.tsx:919', 'HTML GENERATION ERROR', { errorMessage: error?.message, errorStack: error?.stack?.substring(0, 200) }, 'E');
+      // #endregion
+      console.error('Error generating PDF HTML:', error);
+      // Return a minimal valid HTML even if there's an error
+      const entryDate = new Date(entry.date).toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+      return `
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <meta charset="utf-8">
+            <style>
+              body {
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                padding: 40px;
+                color: #333;
+              }
+              .title {
+                font-size: 28px;
+                font-weight: bold;
+                margin-bottom: 10px;
+              }
+              .date {
+                font-size: 14px;
+                color: #6b7280;
+                margin-bottom: 15px;
+              }
+              .thoughts {
+                font-size: 16px;
+                line-height: 1.8;
+                white-space: pre-wrap;
+              }
+            </style>
+          </head>
+          <body>
+            <div class="title">${(entry.title || 'Journal Entry').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</div>
+            <div class="date">${entryDate}</div>
+            <div class="thoughts">${(entry.thoughts || 'No thoughts recorded.').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</div>
+          </body>
+        </html>
+      `;
+    }
   };
 
   const handleShareJournal = async (entry: JournalEntry) => {
+    // Prevent multiple simultaneous share requests
+    if (sharing) {
+      return;
+    }
+
     try {
+      setSharing(true);
+      // #region agent log
+      await debugLog('journal.tsx:960', 'handleShareJournal START', { entryId: entry.id, hasMedia: !!entry.media, mediaCount: entry.media?.length || 0 }, 'ALL');
+      // #endregion
+      
       const html = await generateJournalPDFHTML(entry);
       
-      const { uri } = await Print.printToFileAsync({
-        html,
-        base64: false,
-      });
+      // #region agent log
+      await debugLog('journal.tsx:965', 'HTML RECEIVED', { htmlLength: html?.length, htmlPreview: html?.substring(0, 200) }, 'ALL');
+      // #endregion
+      
+      // Validate HTML is not empty
+      if (!html || html.trim().length === 0) {
+        // #region agent log
+        await debugLog('journal.tsx:1046', 'HTML IS EMPTY', {}, 'ALL');
+        // #endregion
+        throw new Error('Generated HTML is empty');
+      }
+      
+      // #region agent log
+      await debugLog('journal.tsx:1050', 'BEFORE PRINT.printToFileAsync', { htmlLength: html.length, htmlHasBody: html.includes('<body>'), htmlHasMedia: html.includes('media-section'), htmlHasTitle: html.includes('Journal Entry'), htmlHasThoughts: html.includes('thoughts'), htmlEnd: html.substring(Math.max(0, html.length - 500)) }, 'ALL');
+      // #endregion
+      
+      let printResult;
+      try {
+        printResult = await Print.printToFileAsync({
+          html,
+          base64: false,
+        });
+        // #region agent log
+        await debugLog('journal.tsx:1058', 'PRINT.printToFileAsync SUCCESS', { hasUri: !!printResult?.uri, uriLength: printResult?.uri?.length, uri: printResult?.uri?.substring(0, 100) }, 'ALL');
+        // #endregion
+      } catch (printError: any) {
+        // #region agent log
+        await debugLog('journal.tsx:1062', 'PRINT.printToFileAsync ERROR', { errorMessage: printError?.message, errorStack: printError?.stack?.substring(0, 300) }, 'ALL');
+        // #endregion
+        throw printError;
+      }
+      
+      const { uri } = printResult;
+      
+      // #region agent log
+      await debugLog('journal.tsx:1068', 'AFTER PRINT.printToFileAsync', { hasUri: !!uri, uriLength: uri?.length }, 'ALL');
+      // #endregion
+
+      if (!uri) {
+        throw new Error('PDF generation returned no file URI');
+      }
 
       if (await Sharing.isAvailableAsync()) {
+        // #region agent log
+        await debugLog('journal.tsx:1074', 'BEFORE SHARING', { uri: uri?.substring(0, 100) }, 'ALL');
+        // #endregion
         await Sharing.shareAsync(uri, {
           mimeType: 'application/pdf',
           dialogTitle: `Share Journal Entry${entry.title ? `: ${entry.title}` : ''}`,
         });
+        // #region agent log
+        await debugLog('journal.tsx:1080', 'AFTER SHARING', {}, 'ALL');
+        // #endregion
       } else {
         Alert.alert('Error', 'Sharing is not available on this device');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error sharing journal:', error);
-      Alert.alert('Error', 'Failed to share journal entry. Some media may not be included if it could not be loaded.');
+      const errorMessage = error?.message || 'Unknown error occurred';
+      
+      // Don't show alert for "another share request" error - user probably clicked twice
+      if (!errorMessage.includes('Another share request')) {
+        Alert.alert(
+          'Error', 
+          `Failed to share journal entry: ${errorMessage}. Please try again.`
+        );
+      }
+    } finally {
+      // Add a small delay before allowing another share to prevent rapid clicks
+      setTimeout(() => {
+        setSharing(false);
+      }, 1000);
     }
   };
 
@@ -660,6 +1186,15 @@ export default function JournalScreen() {
           <ActivityIndicator size="large" color={colors.primary} />
           <Text style={[styles.loadingText, { color: colors.textSecondary }]}>{t('common.loading')}</Text>
         </View>
+      <DeleteConfirmationModal
+        visible={deleteModalVisible}
+        title="Delete Entry"
+        message="Are you sure you want to delete this entry? This action cannot be undone."
+        cancelText="Cancel"
+        deleteText="Delete"
+        onCancel={cancelDeleteEntry}
+        onDelete={confirmDeleteEntry}
+      />
       </SafeAreaView>
     );
   }
@@ -705,9 +1240,14 @@ export default function JournalScreen() {
                   <View style={styles.entryActions}>
                     <TouchableOpacity
                       onPress={() => handleShareJournal(entry)}
-                      style={styles.actionButton}
+                      disabled={sharing}
+                      style={[styles.actionButton, sharing && styles.actionButtonDisabled]}
                     >
-                      <Share2 size={18} color={colors.primary} />
+                      {sharing ? (
+                        <ActivityIndicator size="small" color={colors.primary} />
+                      ) : (
+                        <Share2 size={18} color={colors.primary} />
+                      )}
                     </TouchableOpacity>
                     <TouchableOpacity
                       onPress={() => handleEditEntry(entry)}
@@ -1074,6 +1614,16 @@ export default function JournalScreen() {
         </View>
       </Modal>
 
+      <DeleteConfirmationModal
+        visible={deleteModalVisible}
+        title="Delete Entry"
+        message="Are you sure you want to delete this entry? This action cannot be undone."
+        cancelText="Cancel"
+        deleteText="Delete"
+        onCancel={cancelDeleteEntry}
+        onDelete={confirmDeleteEntry}
+      />
+
       <BottomTabBar />
     </SafeAreaView>
   );
@@ -1179,6 +1729,9 @@ const styles = StyleSheet.create({
   },
   actionButton: {
     padding: 4,
+  },
+  actionButtonDisabled: {
+    opacity: 0.5,
   },
   paktTag: {
     alignSelf: 'flex-start',

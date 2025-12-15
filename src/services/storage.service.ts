@@ -16,7 +16,7 @@ export class StorageService {
 
       // If bucket doesn't exist, we'll get an error
       // In production, the bucket should be created via migration
-      if (error && error.message?.includes('not found') || error?.statusCode === 404) {
+      if (error && (error.message?.includes('not found') || ((error as any)?.statusCode === 404))) {
         console.warn('Avatars bucket not found. Please create it in Supabase dashboard.');
         throw new Error('Storage bucket not configured. Please contact support or check Supabase storage setup.');
       }
@@ -120,7 +120,7 @@ export class StorageService {
         console.error('Storage upload error:', error);
         
         // Provide more specific error messages
-        if (error.message?.includes('not found') || error.statusCode === 404) {
+        if (error.message?.includes('not found') || (error as any).statusCode === 404) {
           throw new Error('Storage bucket not found. Please ensure the "avatars" bucket exists in Supabase.');
         } else if (error.message?.includes('permission') || error.message?.includes('policy')) {
           throw new Error('Permission denied. Please check storage policies in Supabase.');
@@ -191,7 +191,7 @@ export class StorageService {
         limit: 1,
       });
 
-      if (error && (error.message?.includes('not found') || error?.statusCode === 404)) {
+      if (error && (error.message?.includes('not found') || (error as any)?.statusCode === 404)) {
         console.warn('Journal media bucket not found. Please create it in Supabase dashboard.');
         throw new Error('Storage bucket not configured. Please contact support or check Supabase storage setup.');
       }
@@ -223,10 +223,16 @@ export class StorageService {
       await this.ensureJournalMediaBucketExists();
 
       let fileData: Blob | Uint8Array;
+      let detectedMimeType = mimeType;
 
       if (Platform.OS === 'web') {
         const response = await fetch(fileUri);
-        fileData = await response.blob();
+        const blob = await response.blob();
+        fileData = blob;
+        // Use blob's MIME type if available and valid, otherwise use provided mimeType
+        if (blob.type && blob.type !== 'application/octet-stream' && blob.type !== '') {
+          detectedMimeType = blob.type;
+        }
       } else {
         try {
           const response = await fetch(fileUri);
@@ -234,6 +240,10 @@ export class StorageService {
             const blob = await response.blob();
             const arrayBuffer = await blob.arrayBuffer();
             fileData = new Uint8Array(arrayBuffer);
+            // Use blob's MIME type if available and valid
+            if (blob.type && blob.type !== 'application/octet-stream' && blob.type !== '') {
+              detectedMimeType = blob.type;
+            }
           } else {
             throw new Error('Failed to fetch file');
           }
@@ -250,6 +260,37 @@ export class StorageService {
         }
       }
 
+      // If MIME type is still application/octet-stream, try to detect from file extension
+      if (detectedMimeType === 'application/octet-stream') {
+        const ext = fileName.split('.').pop()?.toLowerCase();
+        const mimeTypeMap: Record<string, string> = {
+          // Images
+          jpg: 'image/jpeg',
+          jpeg: 'image/jpeg',
+          png: 'image/png',
+          gif: 'image/gif',
+          webp: 'image/webp',
+          bmp: 'image/bmp',
+          // Videos
+          mp4: 'video/mp4',
+          mov: 'video/quicktime',
+          avi: 'video/x-msvideo',
+          mkv: 'video/x-matroska',
+          webm: 'video/webm',
+          m4v: 'video/x-m4v',
+          // Documents
+          pdf: 'application/pdf',
+          doc: 'application/msword',
+          docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+          txt: 'text/plain',
+          rtf: 'application/rtf',
+          odt: 'application/vnd.oasis.opendocument.text',
+        };
+        if (ext && mimeTypeMap[ext]) {
+          detectedMimeType = mimeTypeMap[ext];
+        }
+      }
+
       // Create file path: {userId}/{entryId}/{timestamp}_{fileName}
       const timestamp = Date.now();
       const sanitizedFileName = fileName.replace(/[^a-zA-Z0-9.-]/g, '_');
@@ -259,19 +300,21 @@ export class StorageService {
       const { data, error } = await supabase.storage
         .from('journal-media')
         .upload(filePath, fileData, {
-          contentType: mimeType,
+          contentType: detectedMimeType,
           upsert: false,
           cacheControl: '3600',
         });
 
       if (error) {
         console.error('Storage upload error:', error);
-        if (error.message?.includes('not found') || error.statusCode === 404) {
+        if (error.message?.includes('not found') || (error as any).statusCode === 404) {
           throw new Error('Storage bucket not found. Please create the "journal-media" bucket in Supabase Dashboard > Storage. See JOURNAL_MEDIA_FIX.md for instructions.');
         } else if (error.message?.includes('permission') || error.message?.includes('policy') || error.message?.includes('denied')) {
           throw new Error('Permission denied. Please ensure: 1) The "journal-media" bucket exists and is public, 2) Storage policies are set up (run migration 032_create_journal_media_bucket.sql). See JOURNAL_MEDIA_FIX.md for details.');
         } else if (error.message?.includes('size') || error.message?.includes('too large')) {
           throw new Error('File is too large. Maximum size is 50MB.');
+        } else if (error.message?.includes('mime type') || error.message?.includes('not supported') || error.message?.includes('content type')) {
+          throw new Error(`Upload failed: MIME type "${detectedMimeType}" is not supported. The file type "${fileName.split('.').pop()}" may not be allowed in the storage bucket. Please check bucket settings or use a different file format.`);
         } else {
           throw new Error(`Upload failed: ${error.message || 'Unknown error'}`);
         }
