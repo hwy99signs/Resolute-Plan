@@ -85,7 +85,9 @@
     "noEntries": "Aucune entrée de journal pour le moment",
     "writeFirst": "Écrivez votre première réflexion pour commencer",
     "readAll": "Lire tout",
-    "showLess": "Afficher moins"
+    "showLess": "Afficher moins",
+    "showMoreMedia": "Afficher plus",
+    "showLessMedia": "Afficher moins"
   },
   "share": {
     "shareResolve": "Partager la Résolution",

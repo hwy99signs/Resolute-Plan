@@ -85,7 +85,9 @@
     "noEntries": "No journal entries yet",
     "writeFirst": "Write your first reflection to get started",
     "readAll": "Read all",
-    "showLess": "Show less"
+    "showLess": "Show less",
+    "showMoreMedia": "Show more",
+    "showLessMedia": "Show less"
   },
   "share": {
     "shareResolve": "Share Resolve",

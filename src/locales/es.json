@@ -85,7 +85,9 @@
     "noEntries": "Aún no hay entradas en el diario",
     "writeFirst": "Escribe tu primera reflexión para comenzar",
     "readAll": "Leer todo",
-    "showLess": "Mostrar menos"
+    "showLess": "Mostrar menos",
+    "showMoreMedia": "Mostrar más",
+    "showLessMedia": "Mostrar menos"
   },
   "share": {
     "shareResolve": "Compartir Resolución",

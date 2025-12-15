@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, Alert, ActivityIndicator, Modal, Image, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
+import * as Linking from 'expo-linking';
 import { ArrowLeft, Plus, BookOpen, Calendar, Edit, Trash2, X, Share2, Camera, Image as ImageIcon, FileText, Video, XCircle, Download, Play } from 'lucide-react-native';
 import { useTheme } from '../src/contexts/ThemeContext';
 import { useAuth } from '../src/contexts/AuthContext';
@@ -34,10 +35,10 @@ const debugLog = async (location: string, message: string, data: any, hypothesis
   console.log(`[DEBUG] ${location}: ${message}`, data);
   try {
     // Write to app document directory - we'll read from console for now
-    const docDir = (FileSystem as any).documentDirectory || (FileSystem as any).cacheDirectory || '';
+    const docDir = FileSystemLegacy.documentDirectory || FileSystemLegacy.cacheDirectory || '';
     const logPath = docDir + 'pdf_debug.log';
-    const existingContent = await FileSystem.readAsStringAsync(logPath).catch(() => '');
-    await FileSystem.writeAsStringAsync(logPath, existingContent + logLine, { encoding: (FileSystem as any).EncodingType?.UTF8 || 'utf8' });
+    const existingContent = await FileSystemLegacy.readAsStringAsync(logPath).catch(() => '');
+    await FileSystemLegacy.writeAsStringAsync(logPath, existingContent + logLine, { encoding: FileSystemLegacy.EncodingType.UTF8 });
   } catch (e) {
     // Console logging is primary - file is secondary
   }
@@ -67,6 +68,7 @@ export default function JournalScreen() {
   const [entryToDelete, setEntryToDelete] = useState<JournalEntry | null>(null);
   const [sharing, setSharing] = useState(false);
   const [expandedEntries, setExpandedEntries] = useState<Set<string>>(new Set());
+  const [expandedMedia, setExpandedMedia] = useState<Set<string>>(new Set());
   const [previewMedia, setPreviewMedia] = useState<JournalMedia | null>(null);
   const [downloadingMedia, setDownloadingMedia] = useState<string | null>(null);
 
@@ -405,10 +407,10 @@ export default function JournalScreen() {
         }
       }
 
-      // Download file
-      const documentDir = (FileSystem as any).documentDirectory || (FileSystem as any).cacheDirectory || '';
+      // Download file using legacy API
+      const documentDir = FileSystemLegacy.documentDirectory || FileSystemLegacy.cacheDirectory || '';
       const fileUri = documentDir + fileName;
-      const downloadResult = await FileSystem.downloadAsync(mediaItem.url, fileUri);
+      const downloadResult = await FileSystemLegacy.downloadAsync(mediaItem.url, fileUri);
 
       if (downloadResult.status === 200) {
         // Share the file so user can save it
@@ -590,9 +592,8 @@ export default function JournalScreen() {
             // Fallback to new API if legacy fails
             try {
               // Try with EncodingType if available, otherwise use string
-              const encoding = 'base64';
-              const base64 = await FileSystem.readAsStringAsync(url, {
-                encoding: encoding as any,
+              const base64 = await FileSystemLegacy.readAsStringAsync(url, {
+                encoding: FileSystemLegacy.EncodingType.Base64,
               });
               const ext = url.split('.').pop()?.toLowerCase();
               const mimeTypes: Record<string, string> = {
@@ -611,9 +612,9 @@ export default function JournalScreen() {
           }
         } else {
           // For remote URLs, download first
-          const downloadResult = await FileSystem.downloadAsync(
+          const downloadResult = await FileSystemLegacy.downloadAsync(
             url,
-            ((FileSystem as any).documentDirectory || (FileSystem as any).cacheDirectory || '') + `temp_${Date.now()}.jpg`
+            (FileSystemLegacy.documentDirectory || FileSystemLegacy.cacheDirectory || '') + `temp_${Date.now()}.jpg`
           );
           if (downloadResult.uri) {
             try {
@@ -621,19 +622,18 @@ export default function JournalScreen() {
                 encoding: FileSystemLegacy.EncodingType.Base64,
               });
               // Clean up temp file
-              await FileSystem.deleteAsync(downloadResult.uri, { idempotent: true });
+              await FileSystemLegacy.deleteAsync(downloadResult.uri, { idempotent: true });
               return `data:image/jpeg;base64,${base64}`;
             } catch (legacyError) {
               try {
-                const encoding = 'base64';
-                const base64 = await FileSystem.readAsStringAsync(downloadResult.uri, {
-                  encoding: encoding as any,
+                const base64 = await FileSystemLegacy.readAsStringAsync(downloadResult.uri, {
+                  encoding: FileSystemLegacy.EncodingType.Base64,
                 });
-                await FileSystem.deleteAsync(downloadResult.uri, { idempotent: true });
+                await FileSystemLegacy.deleteAsync(downloadResult.uri, { idempotent: true });
                 return `data:image/jpeg;base64,${base64}`;
               } catch (error) {
                 // Clean up temp file even on error
-                await FileSystem.deleteAsync(downloadResult.uri, { idempotent: true }).catch(() => {});
+                await FileSystemLegacy.deleteAsync(downloadResult.uri, { idempotent: true }).catch(() => {});
                 return null;
               }
             }
@@ -1163,7 +1163,7 @@ export default function JournalScreen() {
 
                 {entry.media && entry.media.length > 0 && (
                   <View style={styles.mediaContainer}>
-                    {entry.media.map((mediaItem, index) => (
+                    {(expandedMedia.has(entry.id) ? entry.media : entry.media.slice(0, 2)).map((mediaItem, index) => (
                       <TouchableOpacity
                         key={index}
                         style={styles.mediaItem}
@@ -1192,6 +1192,26 @@ export default function JournalScreen() {
                         )}
                       </TouchableOpacity>
                     ))}
+                    {entry.media.length > 2 && (
+                      <TouchableOpacity
+                        onPress={() => {
+                          const newExpanded = new Set(expandedMedia);
+                          if (newExpanded.has(entry.id)) {
+                            newExpanded.delete(entry.id);
+                          } else {
+                            newExpanded.add(entry.id);
+                          }
+                          setExpandedMedia(newExpanded);
+                        }}
+                        style={styles.showMoreMediaButton}
+                      >
+                        <Text style={[styles.showMoreMediaText, { color: colors.primary }]}>
+                          {expandedMedia.has(entry.id) 
+                            ? `${t('journal.showLessMedia')} (${entry.media.length - 2} hidden)` 
+                            : `${t('journal.showMoreMedia')} (${entry.media.length - 2} more)`}
+                        </Text>
+                      </TouchableOpacity>
+                    )}
                   </View>
                 )}
 
@@ -1538,6 +1558,108 @@ export default function JournalScreen() {
         onDelete={confirmDeleteEntry}
       />
 
+      {/* Media Preview Modal */}
+      <Modal
+        visible={previewMedia !== null}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setPreviewMedia(null)}
+      >
+        <View style={styles.previewModalOverlay}>
+          <SafeAreaView style={styles.previewModalContainer}>
+            <View style={styles.previewHeader}>
+              <Text style={[styles.previewTitle, { color: colors.text }]} numberOfLines={1}>
+                {previewMedia?.name || 'Media Preview'}
+              </Text>
+              <View style={styles.previewActions}>
+                {previewMedia && (
+                  <TouchableOpacity
+                    onPress={() => handleDownloadMedia(previewMedia)}
+                    disabled={downloadingMedia === previewMedia.url}
+                    style={styles.previewActionButton}
+                  >
+                    {downloadingMedia === previewMedia.url ? (
+                      <ActivityIndicator size="small" color={colors.primary} />
+                    ) : (
+                      <Download size={24} color={colors.primary} />
+                    )}
+                  </TouchableOpacity>
+                )}
+                <TouchableOpacity
+                  onPress={() => setPreviewMedia(null)}
+                  style={styles.previewActionButton}
+                >
+                  <X size={24} color={colors.text} />
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            <ScrollView
+              style={styles.previewContent}
+              contentContainerStyle={styles.previewContentContainer}
+              maximumZoomScale={3}
+              minimumZoomScale={1}
+            >
+              {previewMedia?.type === 'image' && previewMedia.url && (
+                <Image
+                  source={{ uri: previewMedia.url }}
+                  style={styles.previewImage}
+                  resizeMode="contain"
+                />
+              )}
+              
+              {previewMedia?.type === 'video' && previewMedia.url && (
+                <View style={styles.previewVideoContainer}>
+                  <TouchableOpacity
+                    onPress={async () => {
+                      try {
+                        const canOpen = await Linking.canOpenURL(previewMedia!.url);
+                        if (canOpen) {
+                          await Linking.openURL(previewMedia!.url);
+                        } else {
+                          Alert.alert('Error', 'Cannot open video URL');
+                        }
+                      } catch (error) {
+                        console.error('Error opening video:', error);
+                        Alert.alert('Error', 'Failed to open video');
+                      }
+                    }}
+                    style={[styles.videoPlayButton, { backgroundColor: colors.primary }]}
+                  >
+                    <Play size={48} color="#FFFFFF" fill="#FFFFFF" />
+                  </TouchableOpacity>
+                  <Text style={[styles.previewVideoText, { color: colors.text }]}>
+                    Video: {previewMedia.name}
+                  </Text>
+                  <Text style={[styles.previewVideoHint, { color: colors.textSecondary }]}>
+                    Tap play icon to watch video or download to save
+                  </Text>
+                  {Platform.OS === 'web' && (
+                    <video
+                      src={previewMedia.url}
+                      controls
+                      style={{ width: '100%', maxHeight: 400, marginTop: 20 }}
+                    />
+                  )}
+                </View>
+              )}
+              
+              {previewMedia?.type === 'document' && (
+                <View style={styles.previewDocumentContainer}>
+                  <FileText size={64} color={colors.primary} />
+                  <Text style={[styles.previewDocumentText, { color: colors.text }]}>
+                    {previewMedia.name}
+                  </Text>
+                  <Text style={[styles.previewDocumentHint, { color: colors.textSecondary }]}>
+                    Tap download to save document to your device
+                  </Text>
+                </View>
+              )}
+            </ScrollView>
+          </SafeAreaView>
+        </View>
+      </Modal>
+
       <BottomTabBar />
     </SafeAreaView>
   );
@@ -1674,6 +1796,16 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
   },
+  showMoreMediaButton: {
+    marginTop: 8,
+    alignSelf: 'flex-start',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+  },
+  showMoreMediaText: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
   previewModalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.95)',
@@ -1721,6 +1853,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     padding: 40,
+    width: '100%',
+  },
+  videoPlayButton: {
+    backgroundColor: '#9163F2',
+    borderRadius: 40,
+    width: 80,
+    height: 80,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 20,
   },
   previewVideoText: {
     fontSize: 18,
