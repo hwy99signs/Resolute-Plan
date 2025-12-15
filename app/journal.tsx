@@ -618,199 +618,47 @@ export default function JournalScreen() {
       // This prevents large base64 data from breaking PDF generation
       const EMBED_MEDIA_IN_PDF = false; // Set to true to try embedding (may cause blank PDFs)
       
+      // Simplified media handling - just show placeholders to avoid PDF generation issues
       if (entry.media && entry.media.length > 0) {
         try {
-          console.log('Processing media for PDF:', entry.media.length, 'items');
+          console.log('Adding media placeholders for PDF:', entry.media.length, 'items');
           
-          // Process media with timeout
-          const mediaProcessingPromise = Promise.allSettled(
-            entry.media.map(async (mediaItem) => {
-              try {
-                console.log('Processing media item:', mediaItem.type, mediaItem.name);
-                if (mediaItem.type === 'image') {
-                  if (EMBED_MEDIA_IN_PDF) {
-                    const base64Data = await convertMediaToBase64(mediaItem.url);
-                    // Limit base64 size to prevent PDF from being too large (max 2MB base64 = ~1.5MB image)
-                    const MAX_BASE64_SIZE = 2000000; // 2MB
-                    if (base64Data && base64Data.length < MAX_BASE64_SIZE) {
-                      return `
-                        <div class="media-item">
-                          <div class="media-label">Image: ${mediaItem.name}</div>
-                          <img src="${base64Data}" alt="${mediaItem.name}" class="media-image" />
-                        </div>
-                      `;
-                    }
-                  }
-                  // Show placeholder (either because embedding is disabled or image is too large)
-                  const escapedName = escapeHTML(mediaItem.name || 'Unknown');
-                  return `
-                    <div class="media-item">
-                      <div class="media-label">Image: ${escapedName}</div>
-                      <div class="media-placeholder">
-                        <div class="media-icon">🖼️</div>
-                        <div>Image: ${escapedName}</div>
-                        <div style="font-size: 12px; margin-top: 8px; color: #9ca3af;">Image attachment</div>
-                      </div>
-                    </div>
-                  `;
-                } else if (mediaItem.type === 'video') {
-                  // Try multiple methods to get a video thumbnail
-                  let videoImage: string | null = null;
+          const mediaItems = entry.media.map((mediaItem) => {
+            const escapedName = escapeHTML(mediaItem.name || 'Unknown');
+            let icon = '📎';
+            let typeLabel = 'Attachment';
             
-                  // Method 1: Use stored thumbnail if available
-                  if (mediaItem.thumbnail && !mediaItem.thumbnail.startsWith('file://')) {
-                    videoImage = await convertMediaToBase64(mediaItem.thumbnail);
-                  }
-                  
-                  // Method 2: Try to extract a frame from the video URL
-                  if (!videoImage && mediaItem.url) {
-                    // Only try extraction if URL is accessible (not a local file:// that's already uploaded)
-                    if (mediaItem.url.startsWith('http')) {
-                      videoImage = await extractVideoFrame(mediaItem.url);
-                    } else if (mediaItem.url.startsWith('file://')) {
-                      // For local files, try to convert directly (might work for some formats)
-                      // But usually we need to extract a frame
-                      if (Platform.OS === 'web') {
-                        videoImage = await extractVideoFrame(mediaItem.url);
-                      }
-                    }
-                  }
-                  
-                  // Method 3: If we have a local thumbnail file, convert it
-                  if (!videoImage && mediaItem.thumbnail && mediaItem.thumbnail.startsWith('file://')) {
-                    videoImage = await convertMediaToBase64(mediaItem.thumbnail);
-                  }
-                  
-                  // Limit video thumbnail size to prevent PDF from being too large (max 2MB base64)
-                  const MAX_BASE64_SIZE = 2000000; // 2MB
-                  if (EMBED_MEDIA_IN_PDF && videoImage && videoImage.length < MAX_BASE64_SIZE) {
-                    return `
-                      <div class="media-item">
-                        <div class="media-label">Video: ${mediaItem.name}</div>
-                        <div class="video-preview">
-                          <img src="${videoImage}" alt="Video thumbnail: ${mediaItem.name}" class="media-image" />
-                          <div class="video-overlay">
-                            <div class="video-play-icon">▶</div>
-                            <div class="video-label">Video</div>
-                          </div>
-                        </div>
-                      </div>
-                    `;
-                  } else {
-                    // Video thumbnail too large or embedding disabled - show placeholder
-                    const escapedName = (mediaItem.name || 'Unknown').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-                    return `
-                      <div class="media-item">
-                        <div class="media-label">Video: ${escapedName}</div>
-                        <div class="media-placeholder">
-                          <div class="media-icon">🎥</div>
-                          <div>Video: ${escapedName}</div>
-                          <div style="font-size: 12px; margin-top: 8px; color: #9ca3af;">Video attachment</div>
-                        </div>
-                      </div>
-                    `;
-                  }
-                } else if (mediaItem.type === 'document') {
-                  // Check if document is an image file
-                  const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp'];
-                  const isImageDocument = imageExtensions.some(ext => 
-                    mediaItem.name.toLowerCase().endsWith(ext)
-                  );
-                  
-                  if (isImageDocument && EMBED_MEDIA_IN_PDF) {
-                    // Treat as image and embed, but limit size
-                    const base64Data = await convertMediaToBase64(mediaItem.url);
-                    const MAX_BASE64_SIZE = 2000000; // 2MB
-                    if (base64Data && base64Data.length < MAX_BASE64_SIZE) {
-                      return `
-                        <div class="media-item">
-                          <div class="media-label">Document (Image): ${mediaItem.name}</div>
-                          <img src="${base64Data}" alt="${mediaItem.name}" class="media-image" />
-                        </div>
-                      `;
-                    }
-                  }
-                  
-                  // For non-image documents, show a clean placeholder without URL
-                  const escapedName = escapeHTML(mediaItem.name || 'Unknown');
-                  return `
-                    <div class="media-item">
-                      <div class="media-label">Document: ${escapedName}</div>
-                      <div class="media-placeholder">
-                        <div class="media-icon">📄</div>
-                        <div>Document: ${escapedName}</div>
-                      </div>
-                    </div>
-                  `;
-                }
-                return '';
-              } catch (mediaError) {
-                console.error('Error processing media item:', mediaError);
-                const escapedName = escapeHTML(mediaItem.name || 'Unknown');
-                return `
-                  <div class="media-item">
-                    <div class="media-label">${escapedName}</div>
-                    <div class="media-placeholder">Media could not be loaded</div>
+            if (mediaItem.type === 'image') {
+              icon = '🖼️';
+              typeLabel = 'Image';
+            } else if (mediaItem.type === 'video') {
+              icon = '🎥';
+              typeLabel = 'Video';
+            } else if (mediaItem.type === 'document') {
+              icon = '📄';
+              typeLabel = 'Document';
+            }
+            
+            return `
+              <div class="media-item" style="margin-bottom: 12px; padding: 12px; background-color: #f3f4f6; border-radius: 8px;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <span style="font-size: 20px;">${icon}</span>
+                  <div>
+                    <div style="font-weight: 600; color: #374151;">${typeLabel}: ${escapedName}</div>
+                    <div style="font-size: 12px; color: #6b7280; margin-top: 2px;">Media attachment included in journal entry</div>
                   </div>
-                `;
-              }
-            })
-          );
-          
-          // Process with timeout - use Promise.race but handle timeout properly
-          let mediaResults: PromiseSettledResult<string>[];
-          try {
-            mediaResults = await Promise.race([
-              mediaProcessingPromise,
-              new Promise<PromiseSettledResult<string>[]>((resolve) => {
-                setTimeout(() => {
-                  console.warn('Media processing timeout - continuing without media');
-                  // Return empty array of settled results (not just empty array)
-                  resolve([]);
-                }, 10000);
-              })
-            ]);
-          } catch (raceError) {
-            console.error('Promise.race error:', raceError);
-            mediaResults = [];
-          }
-          
-          // #region agent log
-          await debugLog('journal.tsx:714', 'PROMISE.RACE RESULT', { isArray: Array.isArray(mediaResults), length: mediaResults?.length, firstItemType: mediaResults?.[0]?.constructor?.name, hasStatus: !!mediaResults?.[0]?.status, isSettledResult: !!(mediaResults?.[0] && ('status' in mediaResults[0])) }, 'A');
-          // #endregion
-          
-          // Extract successful results - handle both Promise.allSettled results and timeout case
-          const mediaItems = (mediaResults || [])
-            .map((result) => {
-              // Check if this is a Promise.allSettled result object
-              if (result && typeof result === 'object' && 'status' in result) {
-                if (result.status === 'fulfilled') {
-                  return result.value;
-                } else {
-                  console.error('Media item failed:', result.reason);
-                  return null;
-                }
-              } else {
-                // Timeout case or unexpected format
-                console.warn('Unexpected media result format');
-                return null;
-              }
-            })
-            .filter(item => item && typeof item === 'string' && item.trim().length > 0) as string[];
-          
-          console.log('Successfully processed', mediaItems.length, 'media items');
-          
-          if (mediaItems.length > 0) {
-            mediaHTML = `
-              <div class="media-section">
-                <h3 class="media-section-title">Attachments</h3>
-                <div class="media-container">
-                  ${mediaItems.join('')}
                 </div>
               </div>
             `;
-          } else {
-            console.warn('No media items were successfully processed');
+          });
+          
+          if (mediaItems.length > 0) {
+            mediaHTML = `
+              <div class="media-section" style="margin-top: 24px; padding-top: 24px; border-top: 1px solid #e5e7eb;">
+                <h3 style="font-size: 16px; font-weight: 600; color: #374151; margin-bottom: 16px;">Attachments (${entry.media.length})</h3>
+                ${mediaItems.join('')}
+              </div>
+            `;
           }
         } catch (mediaError) {
           console.error('Error processing media:', mediaError);
@@ -1051,7 +899,7 @@ export default function JournalScreen() {
       setSharing(true);
       console.log('Starting PDF generation for entry:', entry.id);
       
-      const html = await generateJournalPDFHTML(entry);
+      let html = await generateJournalPDFHTML(entry);
       
       console.log('HTML generated, length:', html?.length);
       
@@ -1060,21 +908,70 @@ export default function JournalScreen() {
         throw new Error('Generated HTML is empty');
       }
       
-      console.log('Generating PDF from HTML...');
+      console.log('Generating PDF from HTML, length:', html.length);
       
-      const { uri } = await Print.printToFileAsync({
-        html,
-        base64: false,
-      });
-      
-      console.log('PDF generated, URI:', uri?.substring(0, 50));
-      
-      if (!uri) {
-        throw new Error('PDF generation returned no file URI');
+      // Limit HTML size to prevent PDF generation failures
+      const MAX_HTML_LENGTH = 5000000; // 5MB max
+      if (html.length > MAX_HTML_LENGTH) {
+        console.warn('HTML too large, truncating content');
+        // Keep only essential parts if HTML is too large
+        const thoughts = entry.thoughts || '';
+        const truncatedThoughts = thoughts.length > 10000 ? thoughts.substring(0, 10000) + '...' : thoughts;
+        html = html.replace(
+          new RegExp(escapeHTML(entry.thoughts || ''), 'g'),
+          escapeHTML(truncatedThoughts)
+        );
       }
-
-      if (!uri) {
-        throw new Error('PDF generation returned no file URI');
+      
+      let uri: string;
+      try {
+        const result = await Print.printToFileAsync({
+          html,
+          base64: false,
+        });
+        
+        if (!result || !result.uri) {
+          throw new Error('PDF generation returned no file URI');
+        }
+        
+        uri = result.uri;
+        console.log('PDF generated successfully, URI:', uri?.substring(0, 50));
+      } catch (printError: any) {
+        console.error('PDF generation error:', printError);
+        // Try with simplified HTML if first attempt fails
+        const simplifiedHTML = `
+          <!DOCTYPE html>
+          <html>
+            <head>
+              <meta charset="utf-8">
+              <style>
+                body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; padding: 40px; color: #333; }
+                .title { font-size: 28px; font-weight: bold; margin-bottom: 10px; }
+                .date { font-size: 14px; color: #6b7280; margin-bottom: 15px; }
+                .thoughts { font-size: 16px; line-height: 1.8; white-space: pre-wrap; }
+                .media-note { margin-top: 20px; padding: 12px; background-color: #f3f4f6; border-radius: 8px; font-size: 14px; color: #6b7280; }
+              </style>
+            </head>
+            <body>
+              <div class="title">${escapeHTML(entry.title || 'Journal Entry')}</div>
+              <div class="date">${new Date(entry.date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</div>
+              <div class="thoughts">${escapeHTML((entry.thoughts || 'No thoughts recorded.').substring(0, 5000))}</div>
+              ${entry.media && entry.media.length > 0 ? `<div class="media-note">This entry contains ${entry.media.length} attachment(s): ${entry.media.map(m => escapeHTML(m.name || 'Unknown')).join(', ')}</div>` : ''}
+            </body>
+          </html>
+        `;
+        
+        const fallbackResult = await Print.printToFileAsync({
+          html: simplifiedHTML,
+          base64: false,
+        });
+        
+        if (!fallbackResult || !fallbackResult.uri) {
+          throw new Error('PDF generation failed even with simplified HTML');
+        }
+        
+        uri = fallbackResult.uri;
+        console.log('PDF generated with fallback HTML');
       }
 
       if (await Sharing.isAvailableAsync()) {
