@@ -191,7 +191,7 @@ export default function JournalScreen() {
             uploadedMedia.push({
               ...mediaItem,
               url: uploadedUrl,
-              thumbnail: thumbnailUrl || mediaItem.thumbnail,
+              thumbnail: mediaItem.thumbnail, // Keep existing thumbnail if available
             });
           } catch (error) {
             clearInterval(progressInterval);
@@ -590,10 +590,17 @@ export default function JournalScreen() {
     }
   };
 
+  // Helper to escape HTML
+  const escapeHTML = (text: string): string => {
+    return text
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  };
+
   const generateJournalPDFHTML = async (entry: JournalEntry): Promise<string> => {
-    // #region agent log
-    await debugLog('journal.tsx:570', 'generateJournalPDFHTML ENTRY', { hasMedia: !!entry.media, mediaCount: entry.media?.length || 0, entryId: entry.id }, 'A,B,C');
-    // #endregion
     try {
       // Always generate base content first
       const entryDate = new Date(entry.date).toLocaleDateString('en-US', {
@@ -611,9 +618,6 @@ export default function JournalScreen() {
       const EMBED_MEDIA_IN_PDF = false; // Set to true to try embedding (may cause blank PDFs)
       
       if (entry.media && entry.media.length > 0) {
-        // #region agent log
-        await debugLog('journal.tsx:582', 'MEDIA PROCESSING START', { mediaCount: entry.media.length }, 'A');
-        // #endregion
         try {
           console.log('Processing media for PDF:', entry.media.length, 'items');
           
@@ -625,9 +629,6 @@ export default function JournalScreen() {
                 if (mediaItem.type === 'image') {
                   if (EMBED_MEDIA_IN_PDF) {
                     const base64Data = await convertMediaToBase64(mediaItem.url);
-                    // #region agent log
-                    await debugLog('journal.tsx:625', 'IMAGE BASE64 RESULT', { hasBase64: !!base64Data, base64Length: base64Data?.length, base64Prefix: base64Data?.substring(0, 50) }, 'C');
-                    // #endregion
                     // Limit base64 size to prevent PDF from being too large (max 2MB base64 = ~1.5MB image)
                     const MAX_BASE64_SIZE = 2000000; // 2MB
                     if (base64Data && base64Data.length < MAX_BASE64_SIZE) {
@@ -640,12 +641,13 @@ export default function JournalScreen() {
                     }
                   }
                   // Show placeholder (either because embedding is disabled or image is too large)
+                  const escapedName = escapeHTML(mediaItem.name || 'Unknown');
                   return `
                     <div class="media-item">
-                      <div class="media-label">Image: ${mediaItem.name}</div>
+                      <div class="media-label">Image: ${escapedName}</div>
                       <div class="media-placeholder">
                         <div class="media-icon">🖼️</div>
-                        <div>Image: ${mediaItem.name}</div>
+                        <div>Image: ${escapedName}</div>
                         <div style="font-size: 12px; margin-top: 8px; color: #9ca3af;">Image attachment</div>
                       </div>
                     </div>
@@ -657,9 +659,6 @@ export default function JournalScreen() {
                   // Method 1: Use stored thumbnail if available
                   if (mediaItem.thumbnail && !mediaItem.thumbnail.startsWith('file://')) {
                     videoImage = await convertMediaToBase64(mediaItem.thumbnail);
-                    // #region agent log
-                    await debugLog('journal.tsx:654', 'VIDEO THUMBNAIL CONVERTED', { hasVideoImage: !!videoImage, videoImageLength: videoImage?.length }, 'C');
-                    // #endregion
                   }
                   
                   // Method 2: Try to extract a frame from the video URL
@@ -683,9 +682,6 @@ export default function JournalScreen() {
                   
                   // Limit video thumbnail size to prevent PDF from being too large (max 2MB base64)
                   const MAX_BASE64_SIZE = 2000000; // 2MB
-                  // #region agent log
-                  await debugLog('journal.tsx:677', 'VIDEO THUMBNAIL SIZE CHECK', { hasVideoImage: !!videoImage, videoImageLength: videoImage?.length, maxSize: MAX_BASE64_SIZE, willEmbed: !!(videoImage && videoImage.length < MAX_BASE64_SIZE && EMBED_MEDIA_IN_PDF) }, 'C');
-                  // #endregion
                   if (EMBED_MEDIA_IN_PDF && videoImage && videoImage.length < MAX_BASE64_SIZE) {
                     return `
                       <div class="media-item">
@@ -701,12 +697,13 @@ export default function JournalScreen() {
                     `;
                   } else {
                     // Video thumbnail too large or embedding disabled - show placeholder
+                    const escapedName = (mediaItem.name || 'Unknown').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
                     return `
                       <div class="media-item">
-                        <div class="media-label">Video: ${mediaItem.name}</div>
+                        <div class="media-label">Video: ${escapedName}</div>
                         <div class="media-placeholder">
                           <div class="media-icon">🎥</div>
-                          <div>Video: ${mediaItem.name}</div>
+                          <div>Video: ${escapedName}</div>
                           <div style="font-size: 12px; margin-top: 8px; color: #9ca3af;">Video attachment</div>
                         </div>
                       </div>
@@ -734,12 +731,13 @@ export default function JournalScreen() {
                   }
                   
                   // For non-image documents, show a clean placeholder without URL
+                  const escapedName = escapeHTML(mediaItem.name || 'Unknown');
                   return `
                     <div class="media-item">
-                      <div class="media-label">Document: ${mediaItem.name}</div>
+                      <div class="media-label">Document: ${escapedName}</div>
                       <div class="media-placeholder">
                         <div class="media-icon">📄</div>
-                        <div>Document: ${mediaItem.name}</div>
+                        <div>Document: ${escapedName}</div>
                       </div>
                     </div>
                   `;
@@ -747,9 +745,10 @@ export default function JournalScreen() {
                 return '';
               } catch (mediaError) {
                 console.error('Error processing media item:', mediaError);
+                const escapedName = escapeHTML(mediaItem.name || 'Unknown');
                 return `
                   <div class="media-item">
-                    <div class="media-label">${mediaItem.name}</div>
+                    <div class="media-label">${escapedName}</div>
                     <div class="media-placeholder">Media could not be loaded</div>
                   </div>
                 `;
@@ -780,16 +779,8 @@ export default function JournalScreen() {
           // #endregion
           
           // Extract successful results - handle both Promise.allSettled results and timeout case
-          // #region agent log
-          await debugLog('journal.tsx:720', 'BEFORE EXTRACTING MEDIA ITEMS', { mediaResultsType: Array.isArray(mediaResults) ? 'array' : typeof mediaResults, mediaResultsLength: mediaResults?.length, firstResultType: mediaResults?.[0] ? typeof mediaResults[0] : 'none', firstResultKeys: mediaResults?.[0] ? Object.keys(mediaResults[0]) : [] }, 'A');
-          // #endregion
-          
           const mediaItems = (mediaResults || [])
-            .map((result, index) => {
-              // #region agent log
-              debugLog('journal.tsx:725', `PROCESSING RESULT ${index}`, { hasResult: !!result, resultType: typeof result, hasStatus: !!(result && typeof result === 'object' && 'status' in result), resultKeys: result && typeof result === 'object' ? Object.keys(result) : [] }, 'A').catch(() => {});
-              // #endregion
-              
+            .map((result) => {
               // Check if this is a Promise.allSettled result object
               if (result && typeof result === 'object' && 'status' in result) {
                 if (result.status === 'fulfilled') {
@@ -799,8 +790,8 @@ export default function JournalScreen() {
                   return null;
                 }
               } else {
-                // Timeout case or unexpected format - this shouldn't happen but handle gracefully
-                console.warn('Unexpected media result format:', result);
+                // Timeout case or unexpected format
+                console.warn('Unexpected media result format');
                 return null;
               }
             })
@@ -819,22 +810,12 @@ export default function JournalScreen() {
             `;
           } else {
             console.warn('No media items were successfully processed');
-            // #region agent log
-            await debugLog('journal.tsx:743', 'NO MEDIA ITEMS PROCESSED', { mediaResultsLength: mediaResults?.length }, 'A');
-            // #endregion
           }
         } catch (mediaError) {
-          // #region agent log
-          await debugLog('journal.tsx:746', 'MEDIA PROCESSING ERROR', { errorMessage: mediaError?.message }, 'A');
-          // #endregion
           console.error('Error processing media:', mediaError);
           // Continue without media if processing fails
           mediaHTML = '';
         }
-      } else if (entry.media && entry.media.length > 0) {
-        // #region agent log
-        await debugLog('journal.tsx:752', 'MEDIA SKIPPED FOR TESTING', { mediaCount: entry.media.length }, 'A');
-        // #endregion
       }
 
       // Generate the HTML - always include journal content even if media fails
@@ -981,16 +962,16 @@ export default function JournalScreen() {
         </head>
         <body>
           <div class="header">
-            <div class="title">${(entry.title || 'Journal Entry').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</div>
+            <div class="title">${escapeHTML(entry.title || 'Journal Entry')}</div>
             <div class="date">${entryDate}</div>
             <div class="meta">
-              ${paktName ? `<div class="meta-item"><strong>Linked to:</strong> ${paktName.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</div>` : ''}
-              ${entry.mood ? `<div class="meta-item"><strong>Mood:</strong> ${entry.mood.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</div>` : ''}
+              ${paktName ? `<div class="meta-item"><strong>Linked to:</strong> ${escapeHTML(paktName)}</div>` : ''}
+              ${entry.mood ? `<div class="meta-item"><strong>Mood:</strong> ${escapeHTML(entry.mood)}</div>` : ''}
             </div>
           </div>
-          ${entry.mood ? `<div class="mood">${entry.mood.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</div>` : ''}
+          ${entry.mood ? `<div class="mood">${escapeHTML(entry.mood)}</div>` : ''}
           <div class="content">
-            <div class="thoughts">${(entry.thoughts || 'No thoughts recorded.').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</div>
+            <div class="thoughts">${escapeHTML(entry.thoughts || 'No thoughts recorded.')}</div>
             ${mediaHTML || ''}
           </div>
         </body>
@@ -998,51 +979,22 @@ export default function JournalScreen() {
     `;
       
       // Validate HTML structure before returning
-      // #region agent log
-      await debugLog('journal.tsx:960', 'HTML GENERATED', { 
-        htmlLength: html.length, 
-        mediaHTMLLength: mediaHTML.length, 
-        hasMediaSection: html.includes('media-section'),
-        hasBodyTag: html.includes('<body>'),
-        hasClosingBodyTag: html.includes('</body>'),
-        hasHtmlTag: html.includes('<html>'),
-        hasClosingHtmlTag: html.includes('</html>'),
-        htmlStart: html.substring(0, 300),
-        htmlEnd: html.substring(Math.max(0, html.length - 300))
-      }, 'ALL');
-      // #endregion
+      console.log('PDF HTML generated, length:', html.length, 'has media:', !!mediaHTML);
       
       if (!html || html.trim().length < 100) {
-        // #region agent log
-        await debugLog('journal.tsx:975', 'HTML VALIDATION FAILED - TOO SHORT', { htmlLength: html?.length }, 'D');
-        // #endregion
+        console.error('HTML validation failed - too short:', html?.length);
         throw new Error('Generated HTML is too short or empty');
       }
       
       // Check for basic HTML structure
       if (!html.includes('<html>') || !html.includes('</html>') || !html.includes('<body>') || !html.includes('</body>')) {
-        // #region agent log
-        await debugLog('journal.tsx:981', 'HTML VALIDATION FAILED - INVALID STRUCTURE', { 
-          hasHtml: html.includes('<html>'),
-          hasClosingHtml: html.includes('</html>'),
-          hasBody: html.includes('<body>'),
-          hasClosingBody: html.includes('</body>')
-        }, 'D');
-        // #endregion
+        console.error('HTML validation failed - invalid structure');
         throw new Error('Generated HTML has invalid structure');
       }
       
       console.log('PDF HTML generated successfully, length:', html.length);
-      // #region agent log
-      await debugLog('journal.tsx:990', 'HTML GENERATION SUCCESS', { htmlLength: html.length }, 'A,B,C,D');
-      // #endregion
       return html;
     } catch (error) {
-      // #region agent log
-      await debugLog('journal.tsx:975', 'HTML GENERATION ERROR', { errorMessage: error?.message, errorStack: error?.stack?.substring(0, 200) }, 'E');
-      // #endregion
-      await debugLog('journal.tsx:919', 'HTML GENERATION ERROR', { errorMessage: error?.message, errorStack: error?.stack?.substring(0, 200) }, 'E');
-      // #endregion
       console.error('Error generating PDF HTML:', error);
       // Return a minimal valid HTML even if there's an error
       const entryDate = new Date(entry.date).toLocaleDateString('en-US', {
@@ -1079,9 +1031,9 @@ export default function JournalScreen() {
             </style>
           </head>
           <body>
-            <div class="title">${(entry.title || 'Journal Entry').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</div>
+            <div class="title">${escapeHTML(entry.title || 'Journal Entry')}</div>
             <div class="date">${entryDate}</div>
-            <div class="thoughts">${(entry.thoughts || 'No thoughts recorded.').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</div>
+            <div class="thoughts">${escapeHTML(entry.thoughts || 'No thoughts recorded.')}</div>
           </body>
         </html>
       `;
@@ -1096,65 +1048,40 @@ export default function JournalScreen() {
 
     try {
       setSharing(true);
-      // #region agent log
-      await debugLog('journal.tsx:960', 'handleShareJournal START', { entryId: entry.id, hasMedia: !!entry.media, mediaCount: entry.media?.length || 0 }, 'ALL');
-      // #endregion
+      console.log('Starting PDF generation for entry:', entry.id);
       
       const html = await generateJournalPDFHTML(entry);
       
-      // #region agent log
-      await debugLog('journal.tsx:965', 'HTML RECEIVED', { htmlLength: html?.length, htmlPreview: html?.substring(0, 200) }, 'ALL');
-      // #endregion
+      console.log('HTML generated, length:', html?.length);
       
       // Validate HTML is not empty
       if (!html || html.trim().length === 0) {
-        // #region agent log
-        await debugLog('journal.tsx:1046', 'HTML IS EMPTY', {}, 'ALL');
-        // #endregion
         throw new Error('Generated HTML is empty');
       }
       
-      // #region agent log
-      await debugLog('journal.tsx:1050', 'BEFORE PRINT.printToFileAsync', { htmlLength: html.length, htmlHasBody: html.includes('<body>'), htmlHasMedia: html.includes('media-section'), htmlHasTitle: html.includes('Journal Entry'), htmlHasThoughts: html.includes('thoughts'), htmlEnd: html.substring(Math.max(0, html.length - 500)) }, 'ALL');
-      // #endregion
+      console.log('Generating PDF from HTML...');
       
-      let printResult;
-      try {
-        printResult = await Print.printToFileAsync({
-          html,
-          base64: false,
-        });
-        // #region agent log
-        await debugLog('journal.tsx:1058', 'PRINT.printToFileAsync SUCCESS', { hasUri: !!printResult?.uri, uriLength: printResult?.uri?.length, uri: printResult?.uri?.substring(0, 100) }, 'ALL');
-        // #endregion
-      } catch (printError: any) {
-        // #region agent log
-        await debugLog('journal.tsx:1062', 'PRINT.printToFileAsync ERROR', { errorMessage: printError?.message, errorStack: printError?.stack?.substring(0, 300) }, 'ALL');
-        // #endregion
-        throw printError;
+      const { uri } = await Print.printToFileAsync({
+        html,
+        base64: false,
+      });
+      
+      console.log('PDF generated, URI:', uri?.substring(0, 50));
+      
+      if (!uri) {
+        throw new Error('PDF generation returned no file URI');
       }
-      
-      const { uri } = printResult;
-      
-      // #region agent log
-      await debugLog('journal.tsx:1068', 'AFTER PRINT.printToFileAsync', { hasUri: !!uri, uriLength: uri?.length }, 'ALL');
-      // #endregion
 
       if (!uri) {
         throw new Error('PDF generation returned no file URI');
       }
 
       if (await Sharing.isAvailableAsync()) {
-        // #region agent log
-        await debugLog('journal.tsx:1074', 'BEFORE SHARING', { uri: uri?.substring(0, 100) }, 'ALL');
-        // #endregion
         await Sharing.shareAsync(uri, {
           mimeType: 'application/pdf',
           dialogTitle: `Share Journal Entry${entry.title ? `: ${entry.title}` : ''}`,
         });
-        // #region agent log
-        await debugLog('journal.tsx:1080', 'AFTER SHARING', {}, 'ALL');
-        // #endregion
+        console.log('PDF shared successfully');
       } else {
         Alert.alert('Error', 'Sharing is not available on this device');
       }
