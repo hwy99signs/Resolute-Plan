@@ -83,7 +83,9 @@
     "thoughts": "Thoughts",
     "saveEntry": "Save Entry",
     "noEntries": "No journal entries yet",
-    "writeFirst": "Write your first reflection to get started"
+    "writeFirst": "Write your first reflection to get started",
+    "readAll": "Read all",
+    "showLess": "Show less"
   },
   "share": {
     "shareResolve": "Share Resolve",
@@ -306,9 +308,9 @@
     "title": "Resolute Plan",
     "subtitle": "Smart Commitment Tracking",
     "description": "Make commitments. Track progress. Achieve your goals with intelligence.",
-    "activeUsers": "Active Users",
-    "resolvesAchieved": "Resolves Achieved",
-    "successRate": "Success Rate",
+    "waitlistMembers": "Waitlist Members",
+    "satisfactionRate": "Satisfaction Rate",
+    "launchYear": "Launch Year",
     "startFirstResolve": "Start My First Resolve",
     "exploreFeatures": "Explore Features",
     "trackProgress": "Track Progress",

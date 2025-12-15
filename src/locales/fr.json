@@ -83,7 +83,9 @@
     "thoughts": "Pensées",
     "saveEntry": "Enregistrer l'entrée",
     "noEntries": "Aucune entrée de journal pour le moment",
-    "writeFirst": "Écrivez votre première réflexion pour commencer"
+    "writeFirst": "Écrivez votre première réflexion pour commencer",
+    "readAll": "Lire tout",
+    "showLess": "Afficher moins"
   },
   "share": {
     "shareResolve": "Partager la Résolution",
@@ -309,9 +311,9 @@
     "title": "Resolute Plan",
     "subtitle": "Suivi Intelligent des Engagements",
     "description": "Prenez des engagements. Suivez votre progression. Atteignez vos objectifs avec intelligence.",
-    "activeUsers": "Utilisateurs Actifs",
-    "resolvesAchieved": "Résolutions Réalisées",
-    "successRate": "Taux de Réussite",
+    "waitlistMembers": "Membres sur Liste d'Attente",
+    "satisfactionRate": "Taux de Satisfaction",
+    "launchYear": "Année de Lancement",
     "startFirstResolve": "Commencer ma Première Résolution",
     "exploreFeatures": "Explorer les Fonctionnalités",
     "trackProgress": "Suivre la Progression",

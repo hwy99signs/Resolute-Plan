@@ -272,15 +272,15 @@ export default function WelcomeScreen() {
           >
             <View style={styles.statCard}>
               <Text style={styles.statValue}>10K+</Text>
-              <Text style={styles.statLabel} numberOfLines={1}>{t('welcome.activeUsers')}</Text>
+              <Text style={styles.statLabel} numberOfLines={1}>{t('welcome.waitlistMembers')}</Text>
             </View>
             <View style={styles.statCard}>
-              <Text style={styles.statValue}>50K+</Text>
-              <Text style={styles.statLabel} numberOfLines={1}>{t('welcome.resolvesAchieved')}</Text>
+              <Text style={styles.statValue}>98%</Text>
+              <Text style={styles.statLabel} numberOfLines={1}>{t('welcome.satisfactionRate')}</Text>
             </View>
             <View style={styles.statCard}>
-              <Text style={styles.statValue}>95%</Text>
-              <Text style={styles.statLabel} numberOfLines={1}>{t('welcome.successRate')}</Text>
+              <Text style={styles.statValue}>2025</Text>
+              <Text style={styles.statLabel} numberOfLines={1}>{t('welcome.launchYear')}</Text>
             </View>
           </Animated.View>
 
@@ -342,7 +342,9 @@ export default function WelcomeScreen() {
               onPress={() => router.push('/auth')}
               activeOpacity={0.8}
             >
-              <Text style={styles.primaryButtonText}>{t('welcome.startFirstResolve')}</Text>
+              <Text style={styles.primaryButtonText} numberOfLines={1} ellipsizeMode="clip">
+                Start My First Resolve
+              </Text>
               <Text style={styles.arrow}>→</Text>
             </TouchableOpacity>
             
@@ -680,7 +682,7 @@ const styles = StyleSheet.create({
   primaryButton: {
     backgroundColor: '#FFD88A',
     paddingVertical: 16,
-    paddingHorizontal: 32,
+    paddingHorizontal: 24,
     borderRadius: 16,
     flexDirection: 'row',
     alignItems: 'center',
@@ -690,12 +692,14 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 8,
+    width: '100%',
   },
   primaryButtonText: {
     color: '#3C2B63',
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '700',
-    marginRight: 12,
+    marginRight: 8,
+    flex: 0,
   },
   arrow: {
     color: '#3C2B63',

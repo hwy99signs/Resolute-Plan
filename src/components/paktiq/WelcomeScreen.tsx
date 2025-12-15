@@ -65,15 +65,15 @@ export default function WelcomeScreen({ onGetStarted, onExplore }: WelcomeScreen
         >
           <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-4 text-center border border-white/20">
             <div className="text-2xl mb-1">10K+</div>
-            <div className="text-xs opacity-80">Active Users</div>
+            <div className="text-xs opacity-80">Waitlist Members</div>
           </div>
           <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-4 text-center border border-white/20">
-            <div className="text-2xl mb-1">50K+</div>
-            <div className="text-xs opacity-80">Resolves Achieved</div>
+            <div className="text-2xl mb-1">98%</div>
+            <div className="text-xs opacity-80">Satisfaction Rate</div>
           </div>
           <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-4 text-center border border-white/20">
-            <div className="text-2xl mb-1">95%</div>
-            <div className="text-xs opacity-80">Success Rate</div>
+            <div className="text-2xl mb-1">2025</div>
+            <div className="text-xs opacity-80">Launch Year</div>
           </div>
         </motion.div>
 

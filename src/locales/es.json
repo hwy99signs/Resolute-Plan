@@ -83,7 +83,9 @@
     "thoughts": "Pensamientos",
     "saveEntry": "Guardar Entrada",
     "noEntries": "Aún no hay entradas en el diario",
-    "writeFirst": "Escribe tu primera reflexión para comenzar"
+    "writeFirst": "Escribe tu primera reflexión para comenzar",
+    "readAll": "Leer todo",
+    "showLess": "Mostrar menos"
   },
   "share": {
     "shareResolve": "Compartir Resolución",
@@ -309,9 +311,9 @@
     "title": "Resolute Plan",
     "subtitle": "Seguimiento Inteligente de Compromisos",
     "description": "Haz compromisos. Rastrea el progreso. Logra tus objetivos con inteligencia.",
-    "activeUsers": "Usuarios Activos",
-    "resolvesAchieved": "Resoluciones Logradas",
-    "successRate": "Tasa de Éxito",
+    "waitlistMembers": "Miembros de Lista de Espera",
+    "satisfactionRate": "Tasa de Satisfacción",
+    "launchYear": "Año de Lanzamiento",
     "startFirstResolve": "Comenzar mi Primera Resolución",
     "exploreFeatures": "Explorar Características",
     "trackProgress": "Rastrear Progreso",

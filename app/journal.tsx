@@ -65,6 +65,7 @@ export default function JournalScreen() {
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
   const [entryToDelete, setEntryToDelete] = useState<JournalEntry | null>(null);
   const [sharing, setSharing] = useState(false);
+  const [expandedEntries, setExpandedEntries] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     if (user) {
@@ -358,17 +359,17 @@ export default function JournalScreen() {
   const confirmDeleteEntry = async () => {
     if (!entryToDelete) return;
     
-    try {
+            try {
       await JournalService.deleteEntry(entryToDelete.id);
-      await loadEntries();
+              await loadEntries();
       setDeleteModalVisible(false);
       setEntryToDelete(null);
-    } catch (error) {
-      console.error('Error deleting entry:', error);
-      Alert.alert('Error', 'Failed to delete entry');
+            } catch (error) {
+              console.error('Error deleting entry:', error);
+              Alert.alert('Error', 'Failed to delete entry');
       setDeleteModalVisible(false);
       setEntryToDelete(null);
-    }
+            }
   };
 
   const cancelDeleteEntry = () => {
@@ -1233,7 +1234,32 @@ export default function JournalScreen() {
                   </View>
                 )}
 
-                <Text style={[styles.entryThoughts, { color: colors.text }]}>{entry.thoughts}</Text>
+                <View>
+                  <Text 
+                    style={[styles.entryThoughts, { color: colors.text }]}
+                    numberOfLines={expandedEntries.has(entry.id) ? undefined : 3}
+                  >
+                    {entry.thoughts}
+                  </Text>
+                  {entry.thoughts && entry.thoughts.length > 150 && (
+                    <TouchableOpacity
+                      onPress={() => {
+                        const newExpanded = new Set(expandedEntries);
+                        if (newExpanded.has(entry.id)) {
+                          newExpanded.delete(entry.id);
+                        } else {
+                          newExpanded.add(entry.id);
+                        }
+                        setExpandedEntries(newExpanded);
+                      }}
+                      style={styles.readMoreButton}
+                    >
+                      <Text style={[styles.readMoreText, { color: colors.primary }]}>
+                        {expandedEntries.has(entry.id) ? t('journal.showLess') : t('journal.readAll')}
+                      </Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
               </View>
             ))}
           </View>
@@ -1678,6 +1704,14 @@ const styles = StyleSheet.create({
   entryThoughts: {
     fontSize: 15,
     lineHeight: 22,
+  },
+  readMoreButton: {
+    marginTop: 8,
+    alignSelf: 'flex-start',
+  },
+  readMoreText: {
+    fontSize: 14,
+    fontWeight: '600',
   },
   modalOverlay: {
     flex: 1,
