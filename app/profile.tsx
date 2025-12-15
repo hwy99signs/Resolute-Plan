@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, Image, ActivityIndicator, Alert } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, Image, ActivityIndicator, Alert, Platform, ActionSheetIOS, Modal } from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { Pencil, Calendar, Target, TrendingUp, Trophy, ChevronRight, Crown, Camera, Bell, FileText, Share2, BookOpen, Settings, LogOut } from 'lucide-react-native';
+import { Pencil, Calendar, Target, TrendingUp, Trophy, ChevronRight, Crown, Camera, Bell, FileText, Share2, BookOpen, Settings, LogOut, Image as ImageIcon, ArrowLeft } from 'lucide-react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { useTheme } from '../src/contexts/ThemeContext';
 import { useAuth } from '../src/contexts/AuthContext';
@@ -19,9 +19,11 @@ export default function ProfileScreen() {
   const { colors } = useTheme();
   const { t } = useLanguage();
   const { user, profile: userProfile, updateProfile, refreshProfile, signOut } = useAuth();
+  const insets = useSafeAreaInsets();
   const [uploading, setUploading] = useState(false);
   const [showImageSuccessModal, setShowImageSuccessModal] = useState(false);
   const [showSignOutConfirm, setShowSignOutConfirm] = useState(false);
+  const [showImagePickerModal, setShowImagePickerModal] = useState(false);
   const { insights, loading: analyticsLoading } = useAnalytics();
   const { stats: resolveStats, loading: resolveStatsLoading } = useResolveStats();
 
@@ -54,21 +56,50 @@ export default function ProfileScreen() {
       return;
     }
 
-    try {
-      // Request permission
-      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      if (status !== 'granted') {
-        Alert.alert('Permission Required', 'Please grant camera roll permissions to upload a profile image');
-        return;
-      }
+    // Show custom modal for both iOS and Android
+    setShowImagePickerModal(true);
+  };
 
-      // Launch image picker
-      const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: 'images',
-        allowsEditing: true,
-        aspect: [1, 1],
-        quality: 0.8,
-      });
+  const handleImageSelection = async (source: 'camera' | 'gallery') => {
+    if (!user) {
+      Alert.alert('Error', 'You must be logged in to upload a profile image');
+      return;
+    }
+
+    try {
+      let result: ImagePicker.ImagePickerResult;
+
+      if (source === 'camera') {
+        // Request camera permission
+        const { status: cameraStatus } = await ImagePicker.requestCameraPermissionsAsync();
+        if (cameraStatus !== 'granted') {
+          Alert.alert('Permission Required', 'Please grant camera permissions to take a photo');
+          return;
+        }
+
+        // Launch camera
+        result = await ImagePicker.launchCameraAsync({
+          mediaTypes: 'images',
+          allowsEditing: true,
+          aspect: [1, 1],
+          quality: 0.8,
+        });
+      } else {
+        // Request media library permission
+        const { status: libraryStatus } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+        if (libraryStatus !== 'granted') {
+          Alert.alert('Permission Required', 'Please grant camera roll permissions to choose an image');
+          return;
+        }
+
+        // Launch image library
+        result = await ImagePicker.launchImageLibraryAsync({
+          mediaTypes: 'images',
+          allowsEditing: true,
+          aspect: [1, 1],
+          quality: 0.8,
+        });
+      }
 
       if (!result.canceled && result.assets[0]) {
         setUploading(true);
@@ -377,11 +408,11 @@ export default function ProfileScreen() {
 
       {/* Floating Back Button */}
       <TouchableOpacity 
-        style={styles.backButton}
+        style={[styles.backButton, { top: Math.max(insets.top + 16, 60) }]}
         onPress={() => router.back()}
         activeOpacity={0.8}
       >
-        <Text style={styles.backButtonText}>←</Text>
+        <ArrowLeft size={24} color="#FFFFFF" />
       </TouchableOpacity>
       
       <BottomTabBar />
@@ -403,6 +434,70 @@ export default function ProfileScreen() {
         onCancel={() => setShowSignOutConfirm(false)}
         onDelete={confirmSignOut}
       />
+
+      {/* Image Picker Modal */}
+      <Modal
+        visible={showImagePickerModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowImagePickerModal(false)}
+      >
+        <TouchableOpacity
+          style={styles.modalOverlay}
+          activeOpacity={1}
+          onPress={() => setShowImagePickerModal(false)}
+        >
+          <View
+            style={[styles.imagePickerModal, { backgroundColor: colors.surface }]}
+            onStartShouldSetResponder={() => true}
+          >
+            <Text style={[styles.imagePickerTitle, { color: colors.text }]}>
+              {t('profile.selectImage')}
+            </Text>
+            <Text style={[styles.imagePickerSubtitle, { color: colors.textSecondary }]}>
+              {t('profile.chooseOption')}
+            </Text>
+
+            <TouchableOpacity
+              style={[styles.imagePickerOption, { borderColor: colors.border }]}
+              onPress={() => {
+                setShowImagePickerModal(false);
+                handleImageSelection('camera');
+              }}
+              activeOpacity={0.7}
+            >
+              <Camera size={24} color={colors.primary} />
+              <Text style={[styles.imagePickerOptionText, { color: colors.text }]}>
+                {t('profile.takePhoto')}
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.imagePickerOption, { borderColor: colors.border }]}
+              onPress={() => {
+                setShowImagePickerModal(false);
+                handleImageSelection('gallery');
+              }}
+              activeOpacity={0.7}
+            >
+              <ImageIcon size={24} color={colors.primary} />
+              <Text style={[styles.imagePickerOptionText, { color: colors.text }]}>
+                {t('profile.chooseFromGallery')}
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.imagePickerCancel, { borderColor: colors.border }]}
+              onPress={() => setShowImagePickerModal(false)}
+              activeOpacity={0.7}
+            >
+              <Text style={[styles.imagePickerCancelText, { color: colors.textSecondary }]}>
+                {t('profile.cancel')}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </TouchableOpacity>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -635,11 +730,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 4,
     elevation: 4,
-  },
-  backButtonText: {
-    color: '#FFFFFF',
-    fontSize: 24,
-    fontWeight: 'bold',
+    zIndex: 10,
   },
   menuCard: {
     flexDirection: 'row',
@@ -698,6 +789,63 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   logoutButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  imagePickerModal: {
+    width: '100%',
+    maxWidth: 400,
+    borderRadius: 20,
+    padding: 24,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  imagePickerTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  imagePickerSubtitle: {
+    fontSize: 14,
+    marginBottom: 24,
+    textAlign: 'center',
+  },
+  imagePickerOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
+    padding: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    marginBottom: 12,
+  },
+  imagePickerOptionText: {
+    fontSize: 16,
+    fontWeight: '500',
+    flex: 1,
+  },
+  imagePickerCancel: {
+    padding: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  imagePickerCancelText: {
     fontSize: 16,
     fontWeight: '600',
   },

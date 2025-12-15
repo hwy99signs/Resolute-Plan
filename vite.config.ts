@@ -5,9 +5,13 @@
 
   export default defineConfig({
     plugins: [react()],
+    define: {
+      global: 'globalThis',
+    },
     resolve: {
       extensions: ['.js', '.jsx', '.ts', '.tsx', '.json'],
       alias: {
+        'react-native': path.resolve(__dirname, './src/utils/react-native-web-wrapper.ts'),
         'vaul@1.1.2': 'vaul',
         'sonner@2.0.3': 'sonner',
         'recharts@2.15.2': 'recharts',
@@ -49,9 +53,29 @@
         '@': path.resolve(__dirname, './src'),
       },
     },
+    optimizeDeps: {
+      exclude: ['react-native', 'expo-modules-core'],
+    },
     build: {
       target: 'esnext',
       outDir: 'build',
+      commonjsOptions: {
+        transformMixedEsModules: true,
+      },
+      rollupOptions: {
+        external: (id) => {
+          // Externalize problematic native modules
+          if (id.includes('expo-modules-core/src/requireNativeModule')) {
+            return false;
+          }
+          return false;
+        },
+        output: {
+          globals: {
+            'react-native': 'ReactNative',
+          },
+        },
+      },
     },
     server: {
       port: 3000,

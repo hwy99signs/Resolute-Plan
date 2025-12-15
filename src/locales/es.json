@@ -51,6 +51,7 @@
     "deleteConfirmMessage": "¿Estás seguro de que quieres eliminar \"{{resolveName}}\"? Esta acción no se puede deshacer.",
     "deleteError": "Error al eliminar la resolución. Por favor intenta de nuevo.",
     "shareResolve": "Compartir Resolución",
+    "sharePakt": "Compartir Resolución",
     "exportPdf": "Exportar a PDF",
     "milestones": "Hitos",
     "progress": "Progreso",
@@ -82,7 +83,9 @@
     "thoughts": "Pensamientos",
     "saveEntry": "Guardar Entrada",
     "noEntries": "Aún no hay entradas en el diario",
-    "writeFirst": "Escribe tu primera reflexión para comenzar"
+    "writeFirst": "Escribe tu primera reflexión para comenzar",
+    "readAll": "Leer todo",
+    "showLess": "Mostrar menos"
   },
   "share": {
     "shareResolve": "Compartir Resolución",
@@ -170,6 +173,11 @@
     "quickActions": "Acciones Rápidas",
     "viewAllNotifications": "Ver todas tus notificaciones",
     "successRate": "Tasa de Éxito",
+    "selectImage": "Seleccionar imagen",
+    "chooseOption": "Elige una opción",
+    "takePhoto": "Tomar foto",
+    "chooseFromGallery": "Elegir de la galería",
+    "cancel": "Cancelar",
     "noResolvesInCategory": "No hay Resoluciones en esta categoría",
     "total": "total",
     "done": "Hecho",
@@ -216,7 +224,8 @@
     "completeFirstResolve": "Completa tu primera Resolución",
     "complete5Resolves": "Completa 5 Resoluciones",
     "complete10Resolves": "Completa 10 Resoluciones",
-    "complete25Resolves": "Completa 25 Resoluciones"
+    "complete25Resolves": "Completa 25 Resoluciones",
+    "motivationText": "¡Sigue adelante! Completa más Resoluciones para desbloquear nuevas insignias"
   },
   "categories": {
     "title": "Elige una Categoría",
@@ -274,7 +283,7 @@
     "profile": "Perfil"
   },
   "auth": {
-    "title": "ResolveIQ",
+    "title": "Resolute Plan",
     "createAccount": "Crea tu Cuenta",
     "welcomeBack": "Bienvenido de nuevo",
     "fullName": "Nombre Completo (Opcional)",
@@ -299,12 +308,12 @@
     "failedToAuthenticate": "Error al autenticar. Por favor intenta de nuevo."
   },
   "welcome": {
-    "title": "ResolveIQ",
+    "title": "Resolute Plan",
     "subtitle": "Seguimiento Inteligente de Compromisos",
     "description": "Haz compromisos. Rastrea el progreso. Logra tus objetivos con inteligencia.",
-    "activeUsers": "Usuarios Activos",
-    "resolvesAchieved": "Resoluciones Logradas",
-    "successRate": "Tasa de Éxito",
+    "waitlistMembers": "Miembros de Lista de Espera",
+    "satisfactionRate": "Tasa de Satisfacción",
+    "launchYear": "Año de Lanzamiento",
     "startFirstResolve": "Comenzar mi Primera Resolución",
     "exploreFeatures": "Explorar Características",
     "trackProgress": "Rastrear Progreso",

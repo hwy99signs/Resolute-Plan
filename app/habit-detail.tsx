@@ -660,7 +660,12 @@ export default function HabitDetailScreen() {
         )}
       </View>
 
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView 
+        style={styles.content}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
         {editing ? (
           <>
             <View style={styles.section}>
@@ -781,7 +786,7 @@ export default function HabitDetailScreen() {
               <View style={[styles.infoCard, { backgroundColor: colors.surface }]}>
                 <Calendar size={20} color={colors.primary} />
                 <Text style={[styles.infoText, { color: colors.text }]}>
-                  {t('habit.durationWeeks').replace('{{weeks}}', habit.duration_weeks.toString())}
+                  {t('habit.durationWeeks', { weeks: habit.duration_weeks })}
                 </Text>
               </View>
             )}
@@ -1139,7 +1144,10 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
+  },
+  scrollContent: {
     padding: 20,
+    paddingBottom: 40,
   },
   section: {
     marginBottom: 24,

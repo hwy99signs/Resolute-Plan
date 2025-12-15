@@ -51,6 +51,7 @@
     "deleteConfirmMessage": "Êtes-vous sûr de vouloir supprimer \"{{resolveName}}\" ? Cette action ne peut pas être annulée.",
     "deleteError": "Échec de la suppression de la résolution. Veuillez réessayer.",
     "shareResolve": "Partager la Résolution",
+    "sharePakt": "Partager la Résolution",
     "exportPdf": "Exporter en PDF",
     "milestones": "Jalons",
     "progress": "Progrès",
@@ -82,7 +83,9 @@
     "thoughts": "Pensées",
     "saveEntry": "Enregistrer l'entrée",
     "noEntries": "Aucune entrée de journal pour le moment",
-    "writeFirst": "Écrivez votre première réflexion pour commencer"
+    "writeFirst": "Écrivez votre première réflexion pour commencer",
+    "readAll": "Lire tout",
+    "showLess": "Afficher moins"
   },
   "share": {
     "shareResolve": "Partager la Résolution",
@@ -170,6 +173,11 @@
     "quickActions": "Actions Rapides",
     "viewAllNotifications": "Voir toutes vos notifications",
     "successRate": "Taux de Réussite",
+    "selectImage": "Sélectionner une image",
+    "chooseOption": "Choisir une option",
+    "takePhoto": "Prendre une photo",
+    "chooseFromGallery": "Choisir dans la galerie",
+    "cancel": "Annuler",
     "noResolvesInCategory": "Aucune Résolution dans cette catégorie",
     "total": "total",
     "done": "Terminé",
@@ -216,7 +224,8 @@
     "completeFirstResolve": "Complétez votre première Résolution",
     "complete5Resolves": "Complétez 5 Résolutions",
     "complete10Resolves": "Complétez 10 Résolutions",
-    "complete25Resolves": "Complétez 25 Résolutions"
+    "complete25Resolves": "Complétez 25 Résolutions",
+    "motivationText": "Continuez ! Complétez plus de Résolutions pour débloquer de nouveaux badges"
   },
   "categories": {
     "title": "Choisir une Catégorie",
@@ -274,7 +283,7 @@
     "profile": "Profil"
   },
   "auth": {
-    "title": "ResolveIQ",
+    "title": "Resolute Plan",
     "createAccount": "Créer votre Compte",
     "welcomeBack": "Bon retour",
     "fullName": "Nom Complet (Optionnel)",
@@ -299,12 +308,12 @@
     "failedToAuthenticate": "Échec de l'authentification. Veuillez réessayer."
   },
   "welcome": {
-    "title": "ResolveIQ",
+    "title": "Resolute Plan",
     "subtitle": "Suivi Intelligent des Engagements",
     "description": "Prenez des engagements. Suivez votre progression. Atteignez vos objectifs avec intelligence.",
-    "activeUsers": "Utilisateurs Actifs",
-    "resolvesAchieved": "Résolutions Réalisées",
-    "successRate": "Taux de Réussite",
+    "waitlistMembers": "Membres sur Liste d'Attente",
+    "satisfactionRate": "Taux de Satisfaction",
+    "launchYear": "Année de Lancement",
     "startFirstResolve": "Commencer ma Première Résolution",
     "exploreFeatures": "Explorer les Fonctionnalités",
     "trackProgress": "Suivre la Progression",

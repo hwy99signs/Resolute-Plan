@@ -51,6 +51,7 @@
     "deleteConfirmMessage": "Are you sure you want to delete \"{{resolveName}}\"? This action cannot be undone.",
     "deleteError": "Failed to delete resolve. Please try again.",
     "shareResolve": "Share Resolve",
+    "sharePakt": "Share Resolve",
     "exportPdf": "Export to PDF",
     "milestones": "Milestones",
     "progress": "Progress",
@@ -82,7 +83,9 @@
     "thoughts": "Thoughts",
     "saveEntry": "Save Entry",
     "noEntries": "No journal entries yet",
-    "writeFirst": "Write your first reflection to get started"
+    "writeFirst": "Write your first reflection to get started",
+    "readAll": "Read all",
+    "showLess": "Show less"
   },
   "share": {
     "shareResolve": "Share Resolve",
@@ -166,7 +169,17 @@
     "changeAppLanguage": "Change app language",
     "memberSince": "Member since",
     "committedToGrowth": "Committed to growth and achieving my goals one Resolve at a time.",
-    "features": "Features"
+    "features": "Features",
+    "quickActions": "Quick Actions",
+    "viewAllNotifications": "View all your notifications",
+    "successRate": "Success Rate",
+    "selectImage": "Select Image",
+    "chooseOption": "Choose an option",
+    "takePhoto": "Take Photo",
+    "chooseFromGallery": "Choose from Gallery",
+    "cancel": "Cancel",
+    "imageUpdateTitle": "Success",
+    "imageUpdateMessage": "Profile image updated successfully!"
   },
   "insights": {
     "title": "Insights",
@@ -208,7 +221,8 @@
     "completeFirstResolve": "Complete your first Resolve",
     "complete5Resolves": "Complete 5 Resolves",
     "complete10Resolves": "Complete 10 Resolves",
-    "complete25Resolves": "Complete 25 Resolves"
+    "complete25Resolves": "Complete 25 Resolves",
+    "motivationText": "Keep going! Complete more Resolves to unlock new badges"
   },
   "categories": {
     "title": "Choose a Category",
@@ -266,7 +280,7 @@
     "profile": "Profile"
   },
   "auth": {
-    "title": "ResolveIQ",
+    "title": "Resolute Plan",
     "createAccount": "Create Your Account",
     "welcomeBack": "Welcome Back",
     "fullName": "Full Name (Optional)",
@@ -291,12 +305,12 @@
     "failedToAuthenticate": "Failed to authenticate. Please try again."
   },
   "welcome": {
-    "title": "ResolveIQ",
+    "title": "Resolute Plan",
     "subtitle": "Smart Commitment Tracking",
     "description": "Make commitments. Track progress. Achieve your goals with intelligence.",
-    "activeUsers": "Active Users",
-    "resolvesAchieved": "Resolves Achieved",
-    "successRate": "Success Rate",
+    "waitlistMembers": "Waitlist Members",
+    "satisfactionRate": "Satisfaction Rate",
+    "launchYear": "Launch Year",
     "startFirstResolve": "Start My First Resolve",
     "exploreFeatures": "Explore Features",
     "trackProgress": "Track Progress",
@@ -415,7 +429,7 @@
     "schedule": "Schedule",
     "scheduleHint": "Tap status icon to mark, tap day to toggle, tap time to change",
     "scheduleViewHint": "Tap the status icon to mark as completed or missed",
-    "durationWeeks": "Duration: {weeks} weeks",
+    "durationWeeks": "Duration: {{weeks}} weeks",
     "setTime": "Set time",
     "selectTime": "Select Time",
     "markDay": "Mark {{day}}",

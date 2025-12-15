@@ -1,5 +1,5 @@
 import React, { useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, Animated } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, Animated, Dimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { ArrowLeft, TrendingUp, Target, Calendar, Award, BarChart3, Clock } from 'lucide-react-native';
@@ -10,6 +10,7 @@ import { useAchievements } from '../src/hooks/useAchievements';
 import { useTheme } from '../src/contexts/ThemeContext';
 import { useLanguage } from '../src/contexts/LanguageContext';
 import BottomTabBar from '../src/components/BottomTabBar';
+import { wp, hp, rf, rp, getSpacing, getIconSize, isSmallScreen, isLargeScreen } from '../src/utils/responsive';
 
 export default function InsightsScreen() {
   const router = useRouter();
@@ -21,10 +22,14 @@ export default function InsightsScreen() {
 
   const loading = analyticsLoading || paktsLoading || achievementsLoading;
 
+  // Get screen width for responsive calculations
+  const screenWidth = Dimensions.get('window').width;
+  const statCardWidth = (screenWidth - rp(16) * 2 - getSpacing(12)) / 2; // 2 cards per row with padding and gap
+
   // Animated values for collapsible header
   const scrollY = useRef(new Animated.Value(0)).current;
-  const HEADER_MAX_HEIGHT = 140;
-  const HEADER_MIN_HEIGHT = 70;
+  const HEADER_MAX_HEIGHT = rp(140);
+  const HEADER_MIN_HEIGHT = rp(70);
   const HEADER_SCROLL_DISTANCE = HEADER_MAX_HEIGHT - HEADER_MIN_HEIGHT;
   
   // Animated header styles
@@ -52,9 +57,11 @@ export default function InsightsScreen() {
     extrapolate: 'clamp',
   });
   
+  const baseTitleSize = rf(28);
+  const minTitleSize = rf(20);
   const titleFontSize = scrollY.interpolate({
     inputRange: [0, HEADER_SCROLL_DISTANCE],
-    outputRange: [28, 20],
+    outputRange: [baseTitleSize, minTitleSize],
     extrapolate: 'clamp',
   });
   
@@ -251,6 +258,9 @@ export default function InsightsScreen() {
               styles.headerTitle,
               { fontSize: titleFontSize }
             ]}
+            numberOfLines={1}
+            adjustsFontSizeToFit
+            minimumFontScale={0.8}
           >
             {t('insights.title')}
           </Animated.Text>
@@ -264,7 +274,14 @@ export default function InsightsScreen() {
               }),
             }}
           >
-            <Text style={styles.headerSubtitle}>{t('insights.subtitle')}</Text>
+            <Text 
+              style={styles.headerSubtitle}
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              minimumFontScale={0.85}
+            >
+              {t('insights.subtitle')}
+            </Text>
           </Animated.View>
         </View>
       </Animated.View>
@@ -284,14 +301,39 @@ export default function InsightsScreen() {
           {stats.map((stat, index) => {
             const IconComponent = stat.icon;
             return (
-              <View key={index} style={[styles.statCard, { backgroundColor: colors.surface }]}>
+              <View 
+                key={index} 
+                style={[
+                  styles.statCard, 
+                  { 
+                    backgroundColor: colors.surface,
+                    width: statCardWidth,
+                    marginRight: index % 2 === 0 ? getSpacing(12) : 0,
+                    marginBottom: getSpacing(12),
+                  }
+                ]}
+              >
                 <View style={[styles.statIconContainer, { 
                   backgroundColor: `${stat.colors[0]}20` 
                 }]}>
-                  <IconComponent size={24} color={stat.colors[0]} strokeWidth={2.5} />
+                  <IconComponent size={getIconSize(24)} color={stat.colors[0]} strokeWidth={2.5} />
                 </View>
-                <Text style={[styles.statValue, { color: colors.text }]}>{stat.value}</Text>
-                <Text style={[styles.statLabel, { color: colors.textSecondary }]}>{stat.label}</Text>
+                <Text 
+                  style={[styles.statValue, { color: colors.text }]}
+                  numberOfLines={1}
+                  adjustsFontSizeToFit
+                  minimumFontScale={0.7}
+                >
+                  {stat.value}
+                </Text>
+                <Text 
+                  style={[styles.statLabel, { color: colors.textSecondary }]}
+                  numberOfLines={2}
+                  adjustsFontSizeToFit
+                  minimumFontScale={0.8}
+                >
+                  {stat.label}
+                </Text>
               </View>
             );
           })}
@@ -301,7 +343,7 @@ export default function InsightsScreen() {
         <View style={styles.section}>
           <View style={[styles.chartCard, { backgroundColor: colors.surface }]}>
             <View style={styles.chartHeader}>
-              <BarChart3 size={20} color={colors.primary} />
+              <BarChart3 size={getIconSize(20)} color={colors.primary} />
               <Text style={[styles.chartTitle, { color: colors.text }]}>{t('insights.weeklyActivity')}</Text>
             </View>
             
@@ -333,8 +375,17 @@ export default function InsightsScreen() {
             {categories.map((category, index) => (
               <View key={index} style={styles.categoryRow}>
                 <View style={styles.categoryLeft}>
-                  <Text style={[styles.categoryName, { color: colors.text }]}>{category.name}</Text>
-                  <Text style={[styles.categoryCount, { color: colors.textSecondary }]}>{category.count} Resolves</Text>
+                  <Text 
+                    style={[styles.categoryName, { color: colors.text }]}
+                    numberOfLines={1}
+                    adjustsFontSizeToFit
+                    minimumFontScale={0.85}
+                  >
+                    {category.name}
+                  </Text>
+                  <Text style={[styles.categoryCount, { color: colors.textSecondary }]}>
+                    {category.count} Resolves
+                  </Text>
                 </View>
                 <View style={[styles.categoryBarContainer, { backgroundColor: colors.border }]}>
                   <View 
@@ -356,15 +407,24 @@ export default function InsightsScreen() {
         <View style={styles.section}>
           <View style={[styles.card, { backgroundColor: colors.surface }]}>
             <View style={styles.cardHeaderRow}>
-              <Clock size={20} color="#FFD88A" />
+              <Clock size={getIconSize(20)} color="#FFD88A" />
               <Text style={[styles.cardTitle, { color: colors.text }]}>{t('insights.bestProductivityTimes')}</Text>
             </View>
             
             {productivityTimes.map((time, index) => (
               <View key={index} style={styles.timeRow}>
                 <View style={styles.timeLeft}>
-                  <Text style={[styles.timeText, { color: colors.text }]}>{time.time}</Text>
-                  <Text style={[styles.timePercentage, { color: colors.textSecondary }]}>{time.percentage}%</Text>
+                  <Text 
+                    style={[styles.timeText, { color: colors.text }]}
+                    numberOfLines={1}
+                    adjustsFontSizeToFit
+                    minimumFontScale={0.85}
+                  >
+                    {time.time}
+                  </Text>
+                  <Text style={[styles.timePercentage, { color: colors.textSecondary }]}>
+                    {time.percentage}%
+                  </Text>
                 </View>
                 <View style={[styles.timeBarContainer, { backgroundColor: colors.border }]}>
                   <View 
@@ -386,13 +446,34 @@ export default function InsightsScreen() {
         <View style={styles.section}>
           <View style={styles.consistencyCard}>
             <View style={styles.consistencyLeft}>
-              <Text style={styles.consistencyTitle}>{t('insights.consistencyScore')}</Text>
-              <Text style={styles.consistencyScore}>{consistencyScore}</Text>
-              <Text style={styles.consistencyText}>{t('insights.excellentKeepItUp')}</Text>
+              <Text 
+                style={styles.consistencyTitle}
+                numberOfLines={1}
+                adjustsFontSizeToFit
+                minimumFontScale={0.85}
+              >
+                {t('insights.consistencyScore')}
+              </Text>
+              <Text 
+                style={styles.consistencyScore}
+                numberOfLines={1}
+                adjustsFontSizeToFit
+                minimumFontScale={0.7}
+              >
+                {consistencyScore}
+              </Text>
+              <Text 
+                style={styles.consistencyText}
+                numberOfLines={1}
+                adjustsFontSizeToFit
+                minimumFontScale={0.85}
+              >
+                {t('insights.excellentKeepItUp')}
+              </Text>
             </View>
             
             <View style={styles.consistencyRight}>
-              <Svg width="100" height="100" viewBox="0 0 100 100">
+              <Svg width={rp(100)} height={rp(100)} viewBox="0 0 100 100">
                 {/* Background circle */}
                 <Circle
                   cx="50"
@@ -420,20 +501,6 @@ export default function InsightsScreen() {
           </View>
         </View>
 
-        {/* AI Insights Coming Soon */}
-        <View style={styles.section}>
-          <View style={[styles.aiCard, { backgroundColor: colors.surface }]}>
-            <Text style={styles.aiEmoji}>🤖</Text>
-            <Text style={[styles.aiTitle, { color: colors.text }]}>{t('insights.aiInsightsComingSoon')}</Text>
-            <Text style={[styles.aiText, { color: colors.textSecondary }]}>
-              Get personalized suggestions and optimize your Resolve strategy with AI
-            </Text>
-            <TouchableOpacity style={styles.aiButton}>
-              <Text style={styles.aiButtonText}>Join Waitlist</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-
         <View style={{ height: 40 }} />
       </Animated.ScrollView>
       
@@ -452,8 +519,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   loadingText: {
-    marginTop: 16,
-    fontSize: 16,
+    marginTop: getSpacing(16),
+    fontSize: rf(16),
   },
   header: {
     backgroundColor: '#9163F2',
@@ -461,8 +528,8 @@ const styles = StyleSheet.create({
   },
   backButton: {
     position: 'absolute',
-    top: 16,
-    left: 24,
+    top: rp(16),
+    left: rp(24),
     zIndex: 10,
   },
   headerContent: {
@@ -471,32 +538,30 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   headerTitle: {
-    fontSize: 28,
+    fontSize: rf(28),
     fontWeight: 'bold',
     color: '#FFFFFF',
-    marginBottom: 4,
+    marginBottom: getSpacing(4),
   },
   headerSubtitle: {
-    fontSize: 14,
+    fontSize: rf(14),
     color: 'rgba(255, 255, 255, 0.9)',
   },
   scrollView: {
     flex: 1,
   },
   scrollContent: {
-    padding: 16,
-    paddingTop: 12,
+    padding: rp(16),
+    paddingTop: rp(12),
   },
   statsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 12,
-    marginBottom: 16,
+    marginBottom: getSpacing(16),
   },
   statCard: {
-    width: '47%',
-    borderRadius: 16,
-    padding: 16,
+    borderRadius: rp(16),
+    padding: rp(16),
     alignItems: 'center',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
@@ -505,28 +570,28 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   statIconContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 12,
+    width: rp(48),
+    height: rp(48),
+    borderRadius: rp(12),
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 12,
+    marginBottom: getSpacing(12),
   },
   statValue: {
-    fontSize: 28,
+    fontSize: rf(28),
     fontWeight: 'bold',
-    marginBottom: 2,
+    marginBottom: getSpacing(2),
   },
   statLabel: {
-    fontSize: 12,
+    fontSize: rf(12),
     textAlign: 'center',
   },
   section: {
-    marginBottom: 16,
+    marginBottom: getSpacing(16),
   },
   card: {
-    borderRadius: 16,
-    padding: 16,
+    borderRadius: rp(16),
+    padding: rp(16),
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
@@ -534,19 +599,19 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   cardTitle: {
-    fontSize: 16,
+    fontSize: rf(16),
     fontWeight: '600',
-    marginBottom: 16,
+    marginBottom: getSpacing(16),
   },
   cardHeaderRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
-    marginBottom: 16,
+    gap: getSpacing(12),
+    marginBottom: getSpacing(16),
   },
   chartCard: {
-    borderRadius: 16,
-    padding: 16,
+    borderRadius: rp(16),
+    padding: rp(16),
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
@@ -556,96 +621,101 @@ const styles = StyleSheet.create({
   chartHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
-    marginBottom: 16,
+    gap: getSpacing(12),
+    marginBottom: getSpacing(16),
   },
   chartTitle: {
-    fontSize: 18,
+    fontSize: rf(18),
     fontWeight: '600',
   },
   chart: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-end',
-    height: 120,
+    height: isSmallScreen ? 100 : 120,
   },
   barContainer: {
     flex: 1,
     alignItems: 'center',
+    paddingHorizontal: getSpacing(2),
   },
   barWrapper: {
     width: '100%',
-    height: 100,
+    height: isSmallScreen ? 80 : 100,
     justifyContent: 'flex-end',
     alignItems: 'center',
   },
   bar: {
-    width: '70%',
+    width: isSmallScreen ? '60%' : '70%',
     backgroundColor: '#9163F2',
-    borderRadius: 6,
-    minHeight: 8,
+    borderRadius: rp(6),
+    minHeight: rp(8),
   },
   barLabel: {
-    fontSize: 12,
+    fontSize: rf(12),
     color: '#666',
-    marginTop: 12,
+    marginTop: getSpacing(8),
   },
   categoryRow: {
-    marginBottom: 20,
+    marginBottom: getSpacing(20),
   },
   categoryLeft: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: getSpacing(8),
   },
   categoryName: {
-    fontSize: 15,
+    fontSize: rf(15),
     fontWeight: '500',
+    flex: 1,
   },
   categoryCount: {
-    fontSize: 14,
+    fontSize: rf(14),
+    marginLeft: getSpacing(8),
   },
   categoryBarContainer: {
-    height: 8,
+    height: rp(8),
     backgroundColor: '#F0F0F0',
-    borderRadius: 4,
+    borderRadius: rp(4),
     overflow: 'hidden',
   },
   categoryBar: {
     height: '100%',
-    borderRadius: 4,
+    borderRadius: rp(4),
   },
   timeRow: {
-    marginBottom: 12,
+    marginBottom: getSpacing(12),
   },
   timeLeft: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: getSpacing(8),
   },
   timeText: {
-    fontSize: 14,
+    fontSize: rf(14),
+    flex: 1,
   },
   timePercentage: {
-    fontSize: 14,
+    fontSize: rf(14),
     fontWeight: '600',
+    marginLeft: getSpacing(8),
   },
   timeBarContainer: {
-    height: 8,
+    height: rp(8),
     backgroundColor: '#F0F0F0',
-    borderRadius: 4,
+    borderRadius: rp(4),
     overflow: 'hidden',
   },
   timeBar: {
     height: '100%',
-    borderRadius: 4,
+    borderRadius: rp(4),
   },
   consistencyCard: {
     backgroundColor: '#9163F2',
-    borderRadius: 16,
-    padding: 20,
+    borderRadius: rp(16),
+    padding: rp(20),
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
@@ -657,60 +727,24 @@ const styles = StyleSheet.create({
   },
   consistencyLeft: {
     flex: 1,
+    minWidth: 0,
   },
   consistencyTitle: {
-    fontSize: 16,
+    fontSize: rf(16),
     color: 'rgba(255, 255, 255, 0.9)',
-    marginBottom: 8,
+    marginBottom: getSpacing(8),
   },
   consistencyScore: {
-    fontSize: 56,
+    fontSize: rf(56),
     fontWeight: 'bold',
     color: '#FFFFFF',
-    marginBottom: 8,
+    marginBottom: getSpacing(8),
   },
   consistencyText: {
-    fontSize: 15,
+    fontSize: rf(15),
     color: 'rgba(255, 255, 255, 0.9)',
   },
   consistencyRight: {
-    marginLeft: 16,
-  },
-  aiCard: {
-    borderRadius: 16,
-    padding: 20,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  aiEmoji: {
-    fontSize: 40,
-    marginBottom: 12,
-  },
-  aiTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    marginBottom: 8,
-    textAlign: 'center',
-  },
-  aiText: {
-    fontSize: 14,
-    textAlign: 'center',
-    lineHeight: 20,
-    marginBottom: 16,
-  },
-  aiButton: {
-    backgroundColor: '#9163F2',
-    paddingVertical: 14,
-    paddingHorizontal: 32,
-    borderRadius: 25,
-  },
-  aiButtonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '600',
+    marginLeft: getSpacing(16),
   },
 });
