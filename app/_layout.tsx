@@ -38,20 +38,33 @@ function NotificationHandler() {
   // Hook must be called unconditionally, but it will handle Expo Go check internally
   useNotifications();
 
-  // Schedule habit notifications when user is logged in (only if not in Expo Go)
+  // Schedule habit notifications and reminders when user is logged in (only if not in Expo Go)
   useEffect(() => {
     if (isExpoGo || !user) return;
 
-    const setupHabitNotifications = async () => {
+    const setupNotifications = async () => {
       try {
+        // Request notification permissions
+        await PushNotificationService.requestPermissions();
+        
+        // Register for push notifications
+        await PushNotificationService.registerForPushNotifications(user.id);
+        
+        // Setup habit notifications
         const { HabitNotificationService } = await import('../src/services/habit-notification.service');
         await HabitNotificationService.setupNotificationChannels();
         await HabitNotificationService.scheduleAllHabitNotifications();
+        
+        // Schedule reminder notifications
+        const { ReminderNotificationService } = await import('../src/services/reminder-notification.service');
+        await ReminderNotificationService.scheduleAllReminders(user.id);
+        
+        console.log('✅ All notifications scheduled');
       } catch (error) {
-        console.error('Error setting up habit notifications:', error);
+        console.error('Error setting up notifications:', error);
       }
     };
-    setupHabitNotifications();
+    setupNotifications();
   }, [user]);
 
   // Set up notification listeners (only if not in Expo Go)

@@ -121,7 +121,7 @@ export default function ReminderSetup() {
 
       // 3. Create reminder if enabled
       if (remindersEnabled) {
-        await ReminderService.createReminder({
+        const reminder = await ReminderService.createReminder({
           resolve_id: newResolve.id,
           user_id: user.id,
           frequency: selectedFrequency,
@@ -130,6 +130,16 @@ export default function ReminderSetup() {
           enabled: true,
         });
         console.log('✅ Reminder created');
+        
+        // Schedule device notification for this reminder
+        try {
+          const { ReminderNotificationService } = await import('../src/services/reminder-notification.service');
+          await ReminderNotificationService.scheduleReminderForNewReminder(reminder.id);
+          console.log('✅ Reminder notification scheduled');
+        } catch (notifError) {
+          console.error('Error scheduling reminder notification:', notifError);
+          // Don't fail if notification scheduling fails
+        }
       }
 
       // Reset context and show success modal
