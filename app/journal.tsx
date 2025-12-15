@@ -590,7 +590,7 @@ export default function JournalScreen() {
             // Fallback to new API if legacy fails
             try {
               // Try with EncodingType if available, otherwise use string
-              const encoding = (FileSystem.EncodingType as any)?.Base64 || 'base64';
+              const encoding = 'base64';
               const base64 = await FileSystem.readAsStringAsync(url, {
                 encoding: encoding as any,
               });
@@ -613,7 +613,7 @@ export default function JournalScreen() {
           // For remote URLs, download first
           const downloadResult = await FileSystem.downloadAsync(
             url,
-            FileSystem.documentDirectory + `temp_${Date.now()}.jpg`
+            ((FileSystem as any).documentDirectory || (FileSystem as any).cacheDirectory || '') + `temp_${Date.now()}.jpg`
           );
           if (downloadResult.uri) {
             try {
@@ -625,7 +625,7 @@ export default function JournalScreen() {
               return `data:image/jpeg;base64,${base64}`;
             } catch (legacyError) {
               try {
-                const encoding = (FileSystem.EncodingType as any)?.Base64 || 'base64';
+                const encoding = 'base64';
                 const base64 = await FileSystem.readAsStringAsync(downloadResult.uri, {
                   encoding: encoding as any,
                 });
@@ -1714,9 +1714,9 @@ const styles = StyleSheet.create({
   },
   previewImage: {
     width: '100%',
-    height: '100%',
+    height: 400,
     minHeight: 300,
-  },
+  } as any,
   previewVideoContainer: {
     alignItems: 'center',
     justifyContent: 'center',
