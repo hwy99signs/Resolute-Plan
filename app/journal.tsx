@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, Alert, ActivityIndicator, Modal, Image, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { ArrowLeft, Plus, BookOpen, Calendar, Edit, Trash2, X, Share2, Camera, Image as ImageIcon, FileText, Video, XCircle } from 'lucide-react-native';
+import { ArrowLeft, Plus, BookOpen, Calendar, Edit, Trash2, X, Share2, Camera, Image as ImageIcon, FileText, Video, XCircle, Download, Play } from 'lucide-react-native';
 import { useTheme } from '../src/contexts/ThemeContext';
 import { useAuth } from '../src/contexts/AuthContext';
 import { useLanguage } from '../src/contexts/LanguageContext';
@@ -34,9 +34,10 @@ const debugLog = async (location: string, message: string, data: any, hypothesis
   console.log(`[DEBUG] ${location}: ${message}`, data);
   try {
     // Write to app document directory - we'll read from console for now
-    const logPath = FileSystem.documentDirectory + 'pdf_debug.log';
+    const docDir = (FileSystem as any).documentDirectory || (FileSystem as any).cacheDirectory || '';
+    const logPath = docDir + 'pdf_debug.log';
     const existingContent = await FileSystem.readAsStringAsync(logPath).catch(() => '');
-    await FileSystem.writeAsStringAsync(logPath, existingContent + logLine, { encoding: FileSystem.EncodingType.UTF8 });
+    await FileSystem.writeAsStringAsync(logPath, existingContent + logLine, { encoding: (FileSystem as any).EncodingType?.UTF8 || 'utf8' });
   } catch (e) {
     // Console logging is primary - file is secondary
   }
@@ -66,6 +67,8 @@ export default function JournalScreen() {
   const [entryToDelete, setEntryToDelete] = useState<JournalEntry | null>(null);
   const [sharing, setSharing] = useState(false);
   const [expandedEntries, setExpandedEntries] = useState<Set<string>>(new Set());
+  const [previewMedia, setPreviewMedia] = useState<JournalMedia | null>(null);
+  const [downloadingMedia, setDownloadingMedia] = useState<string | null>(null);
 
   useEffect(() => {
     if (user) {
@@ -375,6 +378,59 @@ export default function JournalScreen() {
   const cancelDeleteEntry = () => {
     setDeleteModalVisible(false);
     setEntryToDelete(null);
+  };
+
+  const handleDownloadMedia = async (mediaItem: JournalMedia) => {
+    if (!mediaItem.url) {
+      Alert.alert('Error', 'Media URL not available');
+      return;
+    }
+
+    try {
+      setDownloadingMedia(mediaItem.url);
+      
+      // Get file extension from URL or name
+      const urlParts = mediaItem.url.split('.');
+      const nameParts = mediaItem.name.split('.');
+      const extension = nameParts.length > 1 ? nameParts[nameParts.length - 1] : 
+                       (urlParts.length > 1 ? urlParts[urlParts.length - 1].split('?')[0] : '');
+      
+      // Determine MIME type and file name
+      let fileName = mediaItem.name;
+      if (!fileName.includes('.')) {
+        if (mediaItem.type === 'image') {
+          fileName = `${fileName}.jpg`;
+        } else if (mediaItem.type === 'video') {
+          fileName = `${fileName}.mp4`;
+        }
+      }
+
+      // Download file
+      const documentDir = (FileSystem as any).documentDirectory || (FileSystem as any).cacheDirectory || '';
+      const fileUri = documentDir + fileName;
+      const downloadResult = await FileSystem.downloadAsync(mediaItem.url, fileUri);
+
+      if (downloadResult.status === 200) {
+        // Share the file so user can save it
+        if (await Sharing.isAvailableAsync()) {
+          await Sharing.shareAsync(downloadResult.uri, {
+            mimeType: mediaItem.type === 'image' ? 'image/jpeg' : 
+                     mediaItem.type === 'video' ? 'video/mp4' : 'application/pdf',
+            dialogTitle: `Save ${mediaItem.name}`,
+          });
+          Alert.alert('Success', `${mediaItem.name} downloaded successfully`);
+        } else {
+          Alert.alert('Success', `File saved to: ${downloadResult.uri}`);
+        }
+      } else {
+        throw new Error('Download failed');
+      }
+    } catch (error: any) {
+      console.error('Error downloading media:', error);
+      Alert.alert('Error', `Failed to download ${mediaItem.name}: ${error.message}`);
+    } finally {
+      setDownloadingMedia(null);
+    }
   };
 
   const handleEditEntry = (entry: JournalEntry) => {
@@ -1108,7 +1164,12 @@ export default function JournalScreen() {
                 {entry.media && entry.media.length > 0 && (
                   <View style={styles.mediaContainer}>
                     {entry.media.map((mediaItem, index) => (
-                      <View key={index} style={styles.mediaItem}>
+                      <TouchableOpacity
+                        key={index}
+                        style={styles.mediaItem}
+                        onPress={() => setPreviewMedia(mediaItem)}
+                        activeOpacity={0.7}
+                      >
                         {mediaItem.type === 'image' && (
                           <Image source={{ uri: mediaItem.url }} style={styles.mediaImage} />
                         )}
@@ -1118,6 +1179,9 @@ export default function JournalScreen() {
                             <Text style={[styles.mediaName, { color: colors.text }]} numberOfLines={2}>
                               {mediaItem.name}
                             </Text>
+                            <View style={styles.playIconOverlay}>
+                              <Play size={16} color="#FFFFFF" fill="#FFFFFF" />
+                            </View>
                           </View>
                         )}
                         {mediaItem.type === 'document' && (
@@ -1126,7 +1190,7 @@ export default function JournalScreen() {
                             <Text style={[styles.mediaName, { color: colors.text }]}>{mediaItem.name}</Text>
                           </View>
                         )}
-                      </View>
+                      </TouchableOpacity>
                     ))}
                   </View>
                 )}
@@ -1610,6 +1674,92 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
   },
+  previewModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.95)',
+  },
+  previewModalContainer: {
+    flex: 1,
+  },
+  previewHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  previewTitle: {
+    flex: 1,
+    fontSize: 16,
+    fontWeight: '600',
+    marginRight: 12,
+  },
+  previewActions: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  previewActionButton: {
+    padding: 8,
+  },
+  previewContent: {
+    flex: 1,
+  },
+  previewContentContainer: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  previewImage: {
+    width: '100%',
+    height: '100%',
+    minHeight: 300,
+  },
+  previewVideoContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 40,
+  },
+  previewVideoText: {
+    fontSize: 18,
+    fontWeight: '600',
+    marginTop: 16,
+    textAlign: 'center',
+  },
+  previewVideoHint: {
+    fontSize: 14,
+    marginTop: 8,
+    textAlign: 'center',
+  },
+  previewDocumentContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 40,
+  },
+  previewDocumentText: {
+    fontSize: 18,
+    fontWeight: '600',
+    marginTop: 16,
+    textAlign: 'center',
+  },
+  previewDocumentHint: {
+    fontSize: 14,
+    marginTop: 8,
+    textAlign: 'center',
+  },
+  playIconOverlay: {
+    position: 'absolute',
+    top: 30,
+    left: 30,
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    borderRadius: 20,
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
@@ -1833,7 +1983,6 @@ const styles = StyleSheet.create({
   uploadProgressBar: {
     height: '100%',
     backgroundColor: '#4CAF50',
-    transition: 'width 0.3s ease',
   },
   uploadCompleteOverlay: {
     position: 'absolute',
