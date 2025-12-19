@@ -21,7 +21,7 @@ import SettingsScreen from './components/paktiq/SettingsScreen';
 import SettingsScreenLive from './components/paktiq/SettingsScreenLive';
 import { useResolves } from './hooks';
 import { ResolveService, MilestoneService, ReminderService } from './services';
-import type { Screen, PaktData } from './types';
+import type { Screen, PaktData, Resolve, Milestone, Reminder } from './types';
 
 // Loading component
 function LoadingScreen() {
@@ -38,7 +38,7 @@ function LoadingScreen() {
             transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
             className="w-12 h-12 border-4 border-white border-t-transparent rounded-full"
           />
-          <p>Loading resolviq...</p>
+          <p>Loading Resolute Plan pro...</p>
         </div>
       </motion.div>
     </div>
@@ -93,7 +93,7 @@ function AppContent() {
         for (let i = 0; i < currentResolve.milestones.length; i++) {
           const milestone = currentResolve.milestones[i];
           await MilestoneService.createMilestone({
-            pakt_id: newResolve.id,
+            resolve_id: newResolve.id,
             user_id: user.id,
             name: milestone.name,
             due_date: milestone.dueDate,

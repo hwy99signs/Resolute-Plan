@@ -1,47 +1,56 @@
 import { useState, useEffect } from 'react';
 import { Sparkles, Quote } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 export function MotivationalQuote() {
-  const [quote, setQuote] = useState({ text: '', author: '' });
+  const { t } = useTranslation();
+  const [quoteIndex, setQuoteIndex] = useState(0);
 
-  const quotes = [
-    { text: "The secret of getting ahead is getting started.", author: "Mark Twain" },
-    { text: "You are never too old to set another goal or to dream a new dream.", author: "C.S. Lewis" },
-    { text: "The future belongs to those who believe in the beauty of their dreams.", author: "Eleanor Roosevelt" },
-    { text: "Success is the sum of small efforts repeated day in and day out.", author: "Robert Collier" },
-    { text: "Don't watch the clock; do what it does. Keep going.", author: "Sam Levenson" },
-    { text: "The only impossible journey is the one you never begin.", author: "Tony Robbins" },
-    { text: "Your limitation—it's only your imagination.", author: "Unknown" },
-    { text: "Great things never come from comfort zones.", author: "Unknown" },
-    { text: "Dream it. Wish it. Do it.", author: "Unknown" },
-    { text: "Success doesn't just find you. You have to go out and get it.", author: "Unknown" },
-    { text: "The harder you work for something, the greater you'll feel when you achieve it.", author: "Unknown" },
-    { text: "Dream bigger. Do bigger.", author: "Unknown" },
-    { text: "Don't stop when you're tired. Stop when you're done.", author: "Unknown" },
-    { text: "Wake up with determination. Go to bed with satisfaction.", author: "Unknown" },
-    { text: "Do something today that your future self will thank you for.", author: "Sean Patrick Flanery" },
-    { text: "Little things make big days.", author: "Unknown" },
-    { text: "It's going to be hard, but hard does not mean impossible.", author: "Unknown" },
-    { text: "Don't wait for opportunity. Create it.", author: "Unknown" },
-    { text: "Sometimes we're tested not to show our weaknesses, but to discover our strengths.", author: "Unknown" },
-    { text: "The key to success is to focus on goals, not obstacles.", author: "Unknown" }
-  ];
+  // Get all quotes using translations
+  const getQuotes = () => {
+    return [
+      { text: t('notificationsFeed.quote1'), author: t('notificationsFeed.quote1Author') },
+      { text: t('notificationsFeed.quote2'), author: t('notificationsFeed.quote2Author') },
+      { text: t('notificationsFeed.quote3'), author: t('notificationsFeed.quote3Author') },
+      { text: t('notificationsFeed.quote4'), author: t('notificationsFeed.quote4Author') },
+      { text: t('notificationsFeed.quote5'), author: t('notificationsFeed.quote5Author') },
+      { text: t('notificationsFeed.quote6'), author: t('notificationsFeed.quote6Author') },
+      { text: t('notificationsFeed.quote7'), author: t('notificationsFeed.quote7Author') },
+      { text: t('notificationsFeed.quote8'), author: t('notificationsFeed.quote8Author') },
+      { text: t('notificationsFeed.quote9'), author: t('notificationsFeed.quote9Author') },
+      { text: t('notificationsFeed.quote10'), author: t('notificationsFeed.quote10Author') },
+      { text: t('notificationsFeed.quote11'), author: t('notificationsFeed.quote11Author') },
+      { text: t('notificationsFeed.quote12'), author: t('notificationsFeed.quote12Author') },
+      { text: t('notificationsFeed.quote13'), author: t('notificationsFeed.quote13Author') },
+      { text: t('notificationsFeed.quote14'), author: t('notificationsFeed.quote14Author') },
+      { text: t('notificationsFeed.quote15'), author: t('notificationsFeed.quote15Author') },
+      { text: t('notificationsFeed.quote16'), author: t('notificationsFeed.quote16Author') },
+      { text: t('notificationsFeed.quote17'), author: t('notificationsFeed.quote17Author') },
+      { text: t('notificationsFeed.quote18'), author: t('notificationsFeed.quote18Author') },
+      { text: t('notificationsFeed.quote19'), author: t('notificationsFeed.quote19Author') },
+      { text: t('notificationsFeed.quote20'), author: t('notificationsFeed.quote20Author') },
+    ];
+  };
 
   useEffect(() => {
+    const quotes = getQuotes();
     // Set a random quote on mount
-    const randomQuote = quotes[Math.floor(Math.random() * quotes.length)];
-    setQuote(randomQuote);
+    const randomIndex = Math.floor(Math.random() * quotes.length);
+    setQuoteIndex(randomIndex);
 
     // Change quote daily
     const lastQuoteDate = localStorage.getItem('lastQuoteDate');
     const today = new Date().toDateString();
     
     if (lastQuoteDate !== today) {
-      const newQuote = quotes[Math.floor(Math.random() * quotes.length)];
-      setQuote(newQuote);
+      const newIndex = Math.floor(Math.random() * quotes.length);
+      setQuoteIndex(newIndex);
       localStorage.setItem('lastQuoteDate', today);
     }
-  }, []);
+  }, [t]);
+
+  const quotes = getQuotes();
+  const quote = quotes[quoteIndex] || quotes[0];
 
   return (
     <div className="relative group">
@@ -61,7 +70,7 @@ export function MotivationalQuote() {
             <div className="flex-1">
               <div className="flex items-center gap-2 mb-3">
                 <Sparkles className="w-4 h-4 animate-pulse" />
-                <span className="text-xs opacity-90 tracking-wide uppercase">Daily Motivation</span>
+                <span className="text-xs opacity-90 tracking-wide uppercase">{t('notificationsFeed.dailyMotivationLabel', { defaultValue: 'Daily Motivation' })}</span>
               </div>
               <p className="text-sm leading-relaxed mb-3 italic">&ldquo;{quote.text}&rdquo;</p>
               <p className="text-xs opacity-90">— {quote.author}</p>

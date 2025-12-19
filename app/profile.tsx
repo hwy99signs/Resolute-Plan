@@ -269,7 +269,7 @@ export default function ProfileScreen() {
           {profile.isPro && (
             <View style={styles.proBadge}>
               <Crown size={16} color="#FFD88A" />
-              <Text style={styles.proText}>resolviq Pro</Text>
+              <Text style={styles.proText}>Resolute Plan pro</Text>
             </View>
           )}
 

@@ -34,5 +34,7 @@ export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
     autoRefreshToken: true,
     persistSession: true,
     detectSessionInUrl: isWeb,
+    storageKey: 'supabase.auth.token', // Explicit storage key for session persistence
+    flowType: 'pkce', // Use PKCE flow for better security and session persistence
   },
 });

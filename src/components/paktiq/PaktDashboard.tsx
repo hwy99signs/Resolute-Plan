@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Plus, Target, Flame, Trophy, TrendingUp, CheckCircle2, Circle, Edit, Settings, Award, BarChart3, Library } from 'lucide-react';
-import { PaktData, Screen } from '../../App';
+// Legacy web component - types not used in React Native app
+// PaktData is defined in PaktCreationContext
 
 type PaktDashboardProps = {
   Resolves: PaktData[];
@@ -68,7 +69,7 @@ export default function PaktDashboard({ Resolves, onNavigate, isDarkMode }: Pakt
         <div className="container mx-auto max-w-md">
           <div className="flex items-center justify-between mb-6">
             <div>
-              <h1 className="text-3xl mb-1">resolviq</h1>
+              <h1 className="text-3xl mb-1">Resolute Plan pro</h1>
               <p className="text-sm opacity-80">Your Commitment Hub</p>
             </div>
             <button

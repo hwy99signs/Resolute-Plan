@@ -167,7 +167,7 @@ export default function NotificationsFeedScreen() {
 
     // Translate notification titles
     if (notification.title.includes('Daily Motivation')) {
-      translatedTitle = t('notificationsFeed.dailyMotivation');
+      translatedTitle = t('notificationsFeed.dailyMotivationLabel') || t('notificationsFeed.dailyMotivation') || 'Daily Motivation';
     } else if (notification.title.includes('Milestone Due Today')) {
       translatedTitle = t('notificationsFeed.milestoneDueToday');
     } else if (notification.title.includes('Milestone Due Tomorrow')) {
@@ -262,6 +262,24 @@ export default function NotificationsFeedScreen() {
       translatedMessage = t('notificationsFeed.motivation5');
     } else if (notification.message.includes("You're building the life")) {
       translatedMessage = t('notificationsFeed.motivation6');
+    } else if (notification.message.includes("Today is a new opportunity")) {
+      translatedMessage = t('notificationsFeed.motivation7');
+    } else if (notification.message.includes("Remember why you started")) {
+      translatedMessage = t('notificationsFeed.motivation8');
+    } else if (notification.message.includes("Progress, not perfection")) {
+      translatedMessage = t('notificationsFeed.motivation9');
+    } else if (notification.message.includes("You are stronger than your excuses")) {
+      translatedMessage = t('notificationsFeed.motivation10');
+    } else if (notification.message.includes("Small progress is still progress")) {
+      translatedMessage = t('notificationsFeed.motivation11');
+    } else if (notification.message.includes("Believe in yourself")) {
+      translatedMessage = t('notificationsFeed.motivation12');
+    } else if (notification.message.includes("Consistency beats intensity")) {
+      translatedMessage = t('notificationsFeed.motivation13');
+    } else if (notification.message.includes("Your goals are within reach")) {
+      translatedMessage = t('notificationsFeed.motivation14');
+    } else if (notification.message.includes("Every milestone you complete")) {
+      translatedMessage = t('notificationsFeed.motivation15');
     }
 
     return { title: translatedTitle, message: translatedMessage };

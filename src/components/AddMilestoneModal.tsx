@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { X, Bell, Lightbulb, Calendar, ChevronRight, Check, Plus } from 'lucide-react';
-import { Milestone } from '../App';
+import type { Milestone } from '../types';
 import { getMilestoneSuggestions, calculateMilestoneDate, MilestoneSuggestion } from '../utils/milestoneSuggestions';
 
 interface AddMilestoneModalProps {

@@ -1,4 +1,5 @@
-import { Resolution } from '../App';
+// Legacy web component - Resolution type not used in React Native app
+// import type { Resolve } from '../types';
 import { ChevronRight, Trash2, Target, Calendar, Sparkles } from 'lucide-react';
 import { useState } from 'react';
 

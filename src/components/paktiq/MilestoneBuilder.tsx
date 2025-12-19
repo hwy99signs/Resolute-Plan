@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { ArrowRight, ArrowLeft, Plus, Trash2, Calendar, Sliders } from 'lucide-react';
-import { PaktData, Milestone } from '../../App';
+import type { Milestone } from '../../types';
+// PaktData is defined in PaktCreationContext
 
 type MilestoneBuilderProps = {
   currentPakt: Partial<PaktData>;

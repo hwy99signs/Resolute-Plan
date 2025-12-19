@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useRef, useMemo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, Animated, Dimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -22,17 +22,47 @@ export default function InsightsScreen() {
 
   const loading = analyticsLoading || paktsLoading || achievementsLoading;
 
-  // Get screen width for responsive calculations
+  // Get screen width and height for responsive calculations
   const screenWidth = Dimensions.get('window').width;
-  const statCardWidth = (screenWidth - rp(16) * 2 - getSpacing(12)) / 2; // 2 cards per row with padding and gap
+  const screenHeight = Dimensions.get('window').height;
+  
+  // Responsive adjustments based on screen size - memoized to prevent module-level evaluation
+  const responsiveValues = useMemo(() => {
+    const isVeryLargeScreen = screenWidth >= 428; // iPhone 13 Pro Max and larger
+    const isTablet = screenWidth >= 768;
+    
+    // Better responsive card width calculation
+    const horizontalPadding = rp(16) * 2;
+    const cardGap = getSpacing(12);
+    const statCardWidth = (screenWidth - horizontalPadding - cardGap) / 2;
+    
+    // Header dimensions
+    const HEADER_MAX_HEIGHT = isVeryLargeScreen ? rp(160) : rp(140);
+    const HEADER_MIN_HEIGHT = isVeryLargeScreen ? rp(80) : rp(70);
+    const HEADER_SCROLL_DISTANCE = HEADER_MAX_HEIGHT - HEADER_MIN_HEIGHT;
+    
+    // Title sizes
+    const baseTitleSize = isVeryLargeScreen ? rf(32) : rf(28);
+    const minTitleSize = isVeryLargeScreen ? rf(22) : rf(20);
+    
+    return {
+      isVeryLargeScreen,
+      isTablet,
+      statCardWidth,
+      HEADER_MAX_HEIGHT,
+      HEADER_MIN_HEIGHT,
+      HEADER_SCROLL_DISTANCE,
+      baseTitleSize,
+      minTitleSize,
+    };
+  }, [screenWidth]);
+
+  const { isVeryLargeScreen, isTablet, statCardWidth, HEADER_MAX_HEIGHT, HEADER_MIN_HEIGHT, HEADER_SCROLL_DISTANCE, baseTitleSize, minTitleSize } = responsiveValues;
 
   // Animated values for collapsible header
   const scrollY = useRef(new Animated.Value(0)).current;
-  const HEADER_MAX_HEIGHT = rp(140);
-  const HEADER_MIN_HEIGHT = rp(70);
-  const HEADER_SCROLL_DISTANCE = HEADER_MAX_HEIGHT - HEADER_MIN_HEIGHT;
   
-  // Animated header styles
+  // Animated header styles - created inside component to avoid module-level evaluation
   const headerHeight = scrollY.interpolate({
     inputRange: [0, HEADER_SCROLL_DISTANCE],
     outputRange: [HEADER_MAX_HEIGHT, HEADER_MIN_HEIGHT],
@@ -57,8 +87,6 @@ export default function InsightsScreen() {
     extrapolate: 'clamp',
   });
   
-  const baseTitleSize = rf(28);
-  const minTitleSize = rf(20);
   const titleFontSize = scrollY.interpolate({
     inputRange: [0, HEADER_SCROLL_DISTANCE],
     outputRange: [baseTitleSize, minTitleSize],
@@ -67,7 +95,7 @@ export default function InsightsScreen() {
   
   const backButtonSize = scrollY.interpolate({
     inputRange: [0, HEADER_SCROLL_DISTANCE],
-    outputRange: [40, 36],
+    outputRange: [isVeryLargeScreen ? 44 : 40, isVeryLargeScreen ? 38 : 36],
     extrapolate: 'clamp',
   });
 
@@ -232,7 +260,13 @@ export default function InsightsScreen() {
         ]}
       >
         <TouchableOpacity 
-          style={styles.backButton}
+          style={[
+            styles.backButton,
+            {
+              top: isVeryLargeScreen ? rp(20) : rp(16),
+              left: isVeryLargeScreen ? rp(28) : rp(24),
+            }
+          ]}
           onPress={() => router.back()}
         >
           <Animated.View
@@ -289,7 +323,13 @@ export default function InsightsScreen() {
       <Animated.ScrollView 
         style={styles.scrollView}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[
+          styles.scrollContent,
+          {
+            padding: isVeryLargeScreen ? rp(20) : rp(16),
+            paddingBottom: isVeryLargeScreen ? rp(24) : rp(16),
+          }
+        ]}
         onScroll={Animated.event(
           [{ nativeEvent: { contentOffset: { y: scrollY } } }],
           { useNativeDriver: false }
@@ -307,7 +347,8 @@ export default function InsightsScreen() {
                   styles.statCard, 
                   { 
                     backgroundColor: colors.surface,
-                    width: statCardWidth,
+                    width: isTablet ? Math.min(statCardWidth, wp(22)) : statCardWidth,
+                    maxWidth: isTablet ? wp(22) : undefined,
                     marginRight: index % 2 === 0 ? getSpacing(12) : 0,
                     marginBottom: getSpacing(12),
                   }
@@ -341,21 +382,39 @@ export default function InsightsScreen() {
 
         {/* Weekly Activity Chart */}
         <View style={styles.section}>
-          <View style={[styles.chartCard, { backgroundColor: colors.surface }]}>
+          <View style={[
+            styles.chartCard, 
+            { 
+              backgroundColor: colors.surface,
+              padding: isVeryLargeScreen ? rp(20) : rp(16),
+            }
+          ]}>
             <View style={styles.chartHeader}>
               <BarChart3 size={getIconSize(20)} color={colors.primary} />
               <Text style={[styles.chartTitle, { color: colors.text }]}>{t('insights.weeklyActivity')}</Text>
             </View>
             
-            <View style={styles.chart}>
+            <View style={[
+              styles.chart,
+              {
+                height: isSmallScreen ? 100 : isVeryLargeScreen ? 140 : 120,
+                paddingHorizontal: getSpacing(4),
+              }
+            ]}>
               {weeklyData.map((item, index) => (
                 <View key={index} style={styles.barContainer}>
-                  <View style={styles.barWrapper}>
+                  <View style={[
+                    styles.barWrapper,
+                    {
+                      height: isSmallScreen ? 80 : isVeryLargeScreen ? 120 : 100,
+                    }
+                  ]}>
                     <View 
                       style={[
                         styles.bar, 
                         { 
                           height: `${(item.value / maxValue) * 100}%`,
+                          width: isSmallScreen ? '60%' : isVeryLargeScreen ? '75%' : '70%',
                         }
                       ]} 
                     />
@@ -369,11 +428,20 @@ export default function InsightsScreen() {
 
         {/* Category Breakdown */}
         <View style={styles.section}>
-          <View style={[styles.card, { backgroundColor: colors.surface }]}>
+          <View style={[
+            styles.card, 
+            { 
+              backgroundColor: colors.surface,
+              padding: isVeryLargeScreen ? rp(20) : rp(16),
+            }
+          ]}>
             <Text style={[styles.cardTitle, { color: colors.text }]}>{t('insights.categoryBreakdown')}</Text>
             
             {categories.map((category, index) => (
-              <View key={index} style={styles.categoryRow}>
+              <View key={index} style={[
+                styles.categoryRow,
+                { marginBottom: isVeryLargeScreen ? getSpacing(24) : getSpacing(20) }
+              ]}>
                 <View style={styles.categoryLeft}>
                   <Text 
                     style={[styles.categoryName, { color: colors.text }]}
@@ -405,7 +473,13 @@ export default function InsightsScreen() {
 
         {/* Best Productivity Times */}
         <View style={styles.section}>
-          <View style={[styles.card, { backgroundColor: colors.surface }]}>
+          <View style={[
+            styles.card, 
+            { 
+              backgroundColor: colors.surface,
+              padding: isVeryLargeScreen ? rp(20) : rp(16),
+            }
+          ]}>
             <View style={styles.cardHeaderRow}>
               <Clock size={getIconSize(20)} color="#FFD88A" />
               <Text style={[styles.cardTitle, { color: colors.text }]}>{t('insights.bestProductivityTimes')}</Text>
@@ -415,7 +489,13 @@ export default function InsightsScreen() {
               <View key={index} style={styles.timeRow}>
                 <View style={styles.timeLeft}>
                   <Text 
-                    style={[styles.timeText, { color: colors.text }]}
+                    style={[
+                      styles.timeText, 
+                      { 
+                        color: colors.text,
+                        fontSize: isVeryLargeScreen ? rf(15) : rf(14),
+                      }
+                    ]}
                     numberOfLines={1}
                     adjustsFontSizeToFit
                     minimumFontScale={0.85}
@@ -455,7 +535,10 @@ export default function InsightsScreen() {
                 {t('insights.consistencyScore')}
               </Text>
               <Text 
-                style={styles.consistencyScore}
+                style={[
+                  styles.consistencyScore,
+                  { fontSize: isVeryLargeScreen ? rf(64) : rf(56) }
+                ]}
                 numberOfLines={1}
                 adjustsFontSizeToFit
                 minimumFontScale={0.7}

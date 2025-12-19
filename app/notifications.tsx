@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Switch, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Switch, ActivityIndicator, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { ArrowLeft, Bell, BellOff, Clock, Target, Trophy, TrendingUp } from 'lucide-react-native';
@@ -7,6 +7,7 @@ import { useTheme } from '../src/contexts/ThemeContext';
 import { useLanguage } from '../src/contexts/LanguageContext';
 import { useAuth } from '../src/contexts/AuthContext';
 import { SettingsService, type NotificationPreferences } from '../src/services/settings.service';
+import { PushNotificationService } from '../src/services/push-notification.service';
 import BottomTabBar from '../src/components/BottomTabBar';
 
 export default function NotificationsScreen() {
@@ -16,6 +17,7 @@ export default function NotificationsScreen() {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [sendingTest, setSendingTest] = useState(false);
   const [settings, setSettings] = useState({
     pushEnabled: true,
     emailEnabled: true,
@@ -99,6 +101,58 @@ export default function NotificationsScreen() {
     }
   };
 
+  const handleSendTestNotification = async () => {
+    if (!user || !settings.pushEnabled) return;
+
+    try {
+      setSendingTest(true);
+
+      // Get list of enabled notification types
+      const enabledTypes: string[] = [];
+      if (settings.paktReminders) enabledTypes.push(t('notifications.resolveReminders') || t('notifications.paktReminders') || 'Resolve Reminders');
+      if (settings.milestoneReminders) enabledTypes.push(t('notifications.milestoneDeadlines'));
+      if (settings.dailyMotivation) enabledTypes.push(t('notifications.dailyMotivation'));
+      if (settings.weeklyReports) enabledTypes.push(t('notifications.weeklyProgressReports'));
+      if (settings.achievements) enabledTypes.push(t('notifications.achievementAlerts'));
+      if (settings.streakReminders) enabledTypes.push(t('notifications.streakProtection'));
+      if (settings.dailyHabitReminders) enabledTypes.push(t('notifications.dailyHabitReminders'));
+
+      // Send a test notification
+      const notificationTitle = enabledTypes.length > 0
+        ? t('notifications.testNotificationTitle') || 'Test Notification'
+        : t('notifications.testNotificationTitle') || 'Test Notification';
+      
+      const notificationBody = enabledTypes.length > 0
+        ? `${t('notifications.testNotificationBody') || 'You have the following notifications enabled:'}\n${enabledTypes.join(', ')}`
+        : t('notifications.testNotificationBodyDefault') || 'This is a test notification. Enable notification types to see more details.';
+
+      await PushNotificationService.sendLocalNotification(
+        notificationTitle,
+        notificationBody,
+        {
+          type: 'test',
+          test: true,
+          enabledTypes: enabledTypes,
+        }
+      );
+
+      Alert.alert(
+        t('notifications.testNotificationSent') || 'Test Notification Sent',
+        t('notifications.testNotificationSentDesc') || 'Check your notification tray to see the test notification.',
+        [{ text: t('common.ok') || 'OK' }]
+      );
+    } catch (error: any) {
+      console.error('Error sending test notification:', error);
+      Alert.alert(
+        t('notifications.testNotificationError') || 'Error',
+        t('notifications.testNotificationErrorDesc') || `Failed to send test notification: ${error.message}`,
+        [{ text: t('common.ok') || 'OK' }]
+      );
+    } finally {
+      setSendingTest(false);
+    }
+  };
+
   type NotificationItem = {
     key: keyof typeof settings;
     icon: typeof Bell;
@@ -131,14 +185,14 @@ export default function NotificationsScreen() {
       ],
     },
     {
-      title: t('notifications.paktReminders'),
+      title: t('notifications.resolveReminders') || 'Resolve Reminders',
       items: [
         {
           key: 'paktReminders',
           icon: Target,
           color: '#9163F2',
-          title: t('notifications.paktReminders'),
-          description: t('notifications.paktRemindersDesc'),
+          title: t('notifications.resolveReminders') || t('notifications.paktReminders') || 'Resolve Reminders',
+          description: t('notifications.resolveRemindersDesc') || t('notifications.paktRemindersDesc') || 'Get reminded about your active Resolves',
         },
         {
           key: 'milestoneReminders',
@@ -324,15 +378,20 @@ export default function NotificationsScreen() {
               { backgroundColor: colors.surface, borderColor: settings.pushEnabled ? colors.primary : colors.border },
               !settings.pushEnabled && styles.testButtonDisabled
             ]}
-            disabled={!settings.pushEnabled}
+            disabled={!settings.pushEnabled || sendingTest}
+            onPress={handleSendTestNotification}
           >
-            <Bell size={20} color={settings.pushEnabled ? colors.primary : colors.textSecondary} />
+            {sendingTest ? (
+              <ActivityIndicator size="small" color={colors.primary} />
+            ) : (
+              <Bell size={20} color={settings.pushEnabled ? colors.primary : colors.textSecondary} />
+            )}
             <Text style={[
               styles.testButtonText,
               { color: settings.pushEnabled ? colors.primary : colors.textSecondary },
               !settings.pushEnabled && { color: colors.textSecondary }
             ]}>
-              {t('notifications.sendTestNotification')}
+              {sendingTest ? t('notifications.sendingTest') : t('notifications.sendTestNotification')}
             </Text>
           </TouchableOpacity>
         </View>

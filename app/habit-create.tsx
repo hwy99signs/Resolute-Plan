@@ -201,7 +201,7 @@ export default function HabitCreateScreen() {
       })
       .join(', ');
 
-    const shareMessage = `I'm starting a new daily habit: "${habitName}"\n\nSchedule:\n${enabledDays}\n\nJoin me on resolviq!`;
+    const shareMessage = `I'm starting a new daily habit: "${habitName}"\n\nSchedule:\n${enabledDays}\n\nJoin me on Resolute Plan pro!`;
 
     try {
       await Share.share({

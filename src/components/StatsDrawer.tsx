@@ -1,5 +1,5 @@
 import { X, TrendingUp, Target, Award, Calendar, Zap } from 'lucide-react';
-import { Resolution, Achievement } from '../App';
+import type { Resolve, Achievement } from '../types';
 
 interface StatsDrawerProps {
   resolutions: Resolution[];

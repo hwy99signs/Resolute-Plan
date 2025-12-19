@@ -1,9 +1,13 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState, useRef } from 'react';
+import { Platform, AppState, AppStateStatus } from 'react-native';
 import type { User, Session } from '@supabase/supabase-js';
 import { AuthService, ProfileService } from '../services';
 import { NotificationService } from '../services/notification.service';
 import { PushNotificationService } from '../services/push-notification.service';
+import { supabase } from '../lib/supabase';
 import type { Profile, ProfileUpdate } from '../types';
+
+const isWeb = Platform.OS === 'web';
 
 interface AuthContextType {
   user: User | null;
@@ -41,11 +45,44 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  // Refresh session when app comes to foreground
+  const refreshSessionOnForeground = async () => {
+    try {
+      const { data: { session: refreshedSession }, error } = await supabase.auth.refreshSession();
+      if (error) {
+        // Don't log network errors as they're expected when offline
+        if (!error.message?.includes('Network request failed') && !error.message?.includes('fetch')) {
+          console.log('Session refresh error (may be normal if no session):', error.message);
+        }
+        return;
+      }
+      
+      if (refreshedSession) {
+        setSession(refreshedSession);
+        if (refreshedSession.user) {
+          setUser(refreshedSession.user);
+          await loadProfile(refreshedSession.user.id);
+        }
+      }
+    } catch (error: any) {
+      // Silently handle network errors - don't break the app if offline
+      if (error?.message?.includes('Network request failed') || error?.message?.includes('fetch')) {
+        // Network error - user might be offline, keep existing session
+        return;
+      }
+      console.error('Error refreshing session:', error);
+    }
+  };
+
   // Initialize auth state
   useEffect(() => {
     const initAuth = async () => {
       try {
-        const currentSession = await AuthService.getSession();
+        // First, try to refresh any existing session
+        const { data: { session: refreshedSession }, error: refreshError } = await supabase.auth.refreshSession();
+        
+        // If refresh fails or no session, get current session
+        const currentSession = refreshedSession || await AuthService.getSession();
         setSession(currentSession);
         
         if (currentSession?.user) {
@@ -54,6 +91,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       } catch (error) {
         console.error('Error initializing auth:', error);
+        // Try to get session anyway
+        try {
+          const fallbackSession = await AuthService.getSession();
+          setSession(fallbackSession);
+          if (fallbackSession?.user) {
+            setUser(fallbackSession.user);
+            await loadProfile(fallbackSession.user.id);
+          }
+        } catch (fallbackError) {
+          console.error('Error getting fallback session:', fallbackError);
+        }
       } finally {
         setLoading(false);
       }
@@ -73,14 +121,56 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           // Register for push notifications
           await PushNotificationService.registerForPushNotifications(newSession.user.id);
         } else {
-          setUser(null);
-          setProfile(null);
+          // Only clear user if it's an explicit sign out
+          if (event === 'SIGNED_OUT') {
+            setUser(null);
+            setProfile(null);
+          }
         }
       }
     );
 
+    // Set up app state listener to refresh session when app comes to foreground
+    const appStateSubscription = AppState.addEventListener('change', async (nextAppState: AppStateStatus) => {
+      if (nextAppState === 'active') {
+        // App has come to the foreground, refresh session
+        await refreshSessionOnForeground();
+      }
+    });
+
+    // Set up periodic session refresh (every 30 minutes) to keep session alive
+    const refreshInterval = setInterval(async () => {
+      try {
+        const { data: { session: currentSession } } = await supabase.auth.getSession();
+        if (currentSession) {
+          // Only refresh if we have a session and are online
+          // Don't fail if network is unavailable
+          try {
+            await refreshSessionOnForeground();
+          } catch (error: any) {
+            // Silently ignore network errors during periodic refresh
+            if (!error?.message?.includes('Network request failed') && !error?.message?.includes('fetch')) {
+              console.error('Error in periodic session refresh:', error);
+            }
+          }
+        }
+      } catch (error: any) {
+        // Silently ignore errors - don't break the app
+        if (!error?.message?.includes('Network request failed') && !error?.message?.includes('fetch')) {
+          console.error('Error checking session:', error);
+        }
+      }
+    }, 30 * 60 * 1000); // 30 minutes
+
     return () => {
       subscription.unsubscribe();
+      if (appStateSubscription) {
+        appStateSubscription.remove();
+      }
+      if (visibilityListener) {
+        visibilityListener();
+      }
+      clearInterval(refreshInterval);
     };
   }, []);
 

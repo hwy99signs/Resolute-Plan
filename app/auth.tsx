@@ -59,8 +59,10 @@ export default function AuthScreen() {
       // Provide more helpful error messages
       let errorMessage = error.message || t('auth.failedToAuthenticate');
       
-      // Handle specific Supabase errors
-      if (error.message?.includes('User already registered')) {
+      // Handle network errors specifically
+      if (error.message?.includes('Network request failed') || error.message?.includes('fetch') || error.message?.includes('AuthRetryableFetchError')) {
+        errorMessage = t('auth.networkError') || 'Network connection failed. Please check your internet connection and try again.';
+      } else if (error.message?.includes('User already registered')) {
         errorMessage = t('auth.emailAlreadyExists') || 'This email is already registered. Please sign in instead.';
       } else if (error.message?.includes('Invalid email')) {
         errorMessage = t('auth.invalidEmail') || 'Please enter a valid email address.';

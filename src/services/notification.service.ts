@@ -133,8 +133,8 @@ export class NotificationService {
     await this.createNotification({
       user_id: userId,
       type: 'welcome',
-      title: '🎉 Welcome to resolviq!',
-      message: `Hi ${name}! Welcome to resolviq. We're excited to help you achieve your goals. Start by creating your first Resolve and breaking it down into milestones. Let's make this year your best one yet! 💪`,
+      title: '🎉 Welcome to Resolute Plan pro!',
+      message: `Hi ${name}! Welcome to Resolute Plan pro. We're excited to help you achieve your goals. Start by creating your first Resolve and breaking it down into milestones. Let's make this year your best one yet! 💪`,
       metadata: { welcome: true, created_at: new Date().toISOString() },
     });
   }

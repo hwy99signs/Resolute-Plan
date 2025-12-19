@@ -40,7 +40,7 @@ export default function ResolveNaming() {
       updatePaktData({
         name: resolveName.trim(),
         description: description.trim(),
-        deadline: deadline.toISOString(),
+        targetDate: deadline.toISOString(),
       });
       router.push('/milestone-builder');
     }

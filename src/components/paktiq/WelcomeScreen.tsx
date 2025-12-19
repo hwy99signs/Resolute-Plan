@@ -49,7 +49,7 @@ export default function WelcomeScreen({ onGetStarted, onExplore }: WelcomeScreen
           transition={{ delay: 0.2 }}
           className="text-center mb-12"
         >
-          <h1 className="text-5xl mb-4">resolviq</h1>
+          <h1 className="text-5xl mb-4">Resolute Plan pro</h1>
           <h2 className="text-2xl mb-4 text-[#FFD88A]">Smart Commitment Tracking</h2>
           <p className="text-lg opacity-90 leading-relaxed">
             Make commitments. Track progress. Achieve your goals with intelligence.

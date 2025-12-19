@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { motion } from 'motion/react';
 import { ArrowLeft, Check, Bell, Calendar, Clock } from 'lucide-react';
-import { PaktData, ReminderSettings } from '../../App';
+// Legacy web component - types not used in React Native app
+// PaktData is defined in PaktCreationContext
 
 type ReminderSetupProps = {
   currentPakt: Partial<PaktData>;
