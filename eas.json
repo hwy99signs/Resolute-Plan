@@ -41,7 +41,7 @@
         "appleTeamId": "your-apple-team-id"
       },
       "android": {
-        "serviceAccountKeyPath": "./path/to/api-key.json",
+        "serviceAccountKeyPath": "./google-play-service-account.json",
         "track": "internal"
       }
     }

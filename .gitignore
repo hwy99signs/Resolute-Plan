@@ -54,5 +54,10 @@ build/
 android/app/build/
 ios/build/
 
+# Google Play Service Account Keys (keep secure!)
+*service*account*.json
+*api-key*.json
+google-play-service-account.json
+
 node_modules
 node_modules
