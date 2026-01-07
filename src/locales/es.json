@@ -312,7 +312,15 @@
     "emailAlreadyExists": "Este correo electrónico ya está registrado. Por favor inicia sesión en su lugar.",
     "invalidEmail": "Por favor ingresa una dirección de correo electrónico válida.",
     "passwordError": "La contraseña debe tener al menos 8 caracteres de longitud.",
-    "databaseError": "Hubo un problema al crear tu cuenta. Por favor intenta de nuevo o contacta al soporte si el problema persiste."
+    "databaseError": "Hubo un problema al crear tu cuenta. Por favor intenta de nuevo o contacta al soporte si el problema persiste.",
+    "forgotPassword": "¿Olvidaste tu Contraseña?",
+    "forgotPasswordTitle": "Restablecer Contraseña",
+    "forgotPasswordSubtitle": "Ingresa tu dirección de correo electrónico y te enviaremos un enlace para restablecer tu contraseña.",
+    "sendResetLink": "Enviar Enlace de Restablecimiento",
+    "resetLinkSent": "Enlace de Restablecimiento Enviado",
+    "resetLinkSentMessage": "Hemos enviado un enlace de restablecimiento de contraseña a {{email}}. Por favor revisa tu correo electrónico y sigue las instrucciones.",
+    "resetPasswordError": "Error al enviar el enlace de restablecimiento. Por favor intenta de nuevo.",
+    "error": "Error"
   },
   "welcome": {
     "title": "Resolute Plan",

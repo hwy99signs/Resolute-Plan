@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, KeyboardAvoidingView, Platform, ScrollView, ActivityIndicator } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, KeyboardAvoidingView, Platform, ScrollView, ActivityIndicator, Modal } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useAuth } from '../src/contexts/AuthContext';
@@ -11,7 +11,7 @@ export default function AuthScreen() {
   const router = useRouter();
   const { t } = useLanguage();
   const { colors } = useTheme();
-  const { signIn, signUp: signUpUser } = useAuth();
+  const { signIn, signUp: signUpUser, resetPassword } = useAuth();
   const [isSignUp, setIsSignUp] = useState(false); // Default to Sign In
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -22,6 +22,10 @@ export default function AuthScreen() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [showErrorModal, setShowErrorModal] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+  const [showForgotPasswordModal, setShowForgotPasswordModal] = useState(false);
+  const [forgotPasswordEmail, setForgotPasswordEmail] = useState('');
+  const [forgotPasswordLoading, setForgotPasswordLoading] = useState(false);
+  const [forgotPasswordSuccess, setForgotPasswordSuccess] = useState(false);
 
   const handleAuth = async () => {
     if (!email || !password) {
@@ -177,6 +181,20 @@ export default function AuthScreen() {
               </View>
             )}
 
+            {/* Forgot Password Link - Only show on Sign In */}
+            {!isSignUp && (
+              <TouchableOpacity
+                onPress={() => {
+                  setForgotPasswordEmail(email);
+                  setShowForgotPasswordModal(true);
+                }}
+                style={styles.forgotPasswordContainer}
+                disabled={loading}
+              >
+                <Text style={styles.forgotPasswordText}>{t('auth.forgotPassword')}</Text>
+              </TouchableOpacity>
+            )}
+
             {/* Submit Button */}
             <TouchableOpacity
               style={[styles.submitButton, loading && styles.submitButtonDisabled]}
@@ -232,6 +250,104 @@ export default function AuthScreen() {
         buttonText={t('common.done')}
         onButtonPress={() => setShowErrorModal(false)}
       />
+
+      {/* Forgot Password Modal */}
+      <Modal
+        visible={showForgotPasswordModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => {
+          setShowForgotPasswordModal(false);
+          setForgotPasswordSuccess(false);
+        }}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            {!forgotPasswordSuccess ? (
+              <>
+                <Text style={styles.modalTitle}>{t('auth.forgotPasswordTitle')}</Text>
+                <Text style={styles.modalSubtitle}>{t('auth.forgotPasswordSubtitle')}</Text>
+                
+                <View style={styles.inputContainer}>
+                  <Text style={styles.label}>{t('auth.email')}</Text>
+                  <TextInput
+                    style={styles.input}
+                    placeholder={t('auth.enterEmail')}
+                    placeholderTextColor="#9CA3AF"
+                    value={forgotPasswordEmail}
+                    onChangeText={setForgotPasswordEmail}
+                    keyboardType="email-address"
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                    editable={!forgotPasswordLoading}
+                  />
+                </View>
+
+                <View style={styles.modalButtonContainer}>
+                  <TouchableOpacity
+                    style={[styles.modalButton, styles.modalButtonSecondary]}
+                    onPress={() => {
+                      setShowForgotPasswordModal(false);
+                      setForgotPasswordEmail('');
+                    }}
+                    disabled={forgotPasswordLoading}
+                  >
+                    <Text style={styles.modalButtonTextSecondary}>{t('common.cancel')}</Text>
+                  </TouchableOpacity>
+                  
+                  <TouchableOpacity
+                    style={[styles.modalButton, styles.modalButtonPrimary, forgotPasswordLoading && styles.submitButtonDisabled]}
+                    onPress={async () => {
+                      if (!forgotPasswordEmail) {
+                        Alert.alert(t('auth.error'), t('auth.invalidEmail'));
+                        return;
+                      }
+                      
+                      setForgotPasswordLoading(true);
+                      try {
+                        await resetPassword(forgotPasswordEmail);
+                        setForgotPasswordSuccess(true);
+                      } catch (error: any) {
+                        Alert.alert(
+                          t('auth.error'),
+                          error.message || t('auth.resetPasswordError')
+                        );
+                      } finally {
+                        setForgotPasswordLoading(false);
+                      }
+                    }}
+                    disabled={forgotPasswordLoading}
+                  >
+                    {forgotPasswordLoading ? (
+                      <ActivityIndicator color="#3C2B63" />
+                    ) : (
+                      <Text style={styles.modalButtonTextPrimary}>{t('auth.sendResetLink')}</Text>
+                    )}
+                  </TouchableOpacity>
+                </View>
+              </>
+            ) : (
+              <>
+                <Text style={styles.modalTitle}>{t('auth.resetLinkSent')}</Text>
+                <Text style={styles.modalSubtitle}>
+                  {t('auth.resetLinkSentMessage', { email: forgotPasswordEmail })}
+                </Text>
+                
+                <TouchableOpacity
+                  style={[styles.modalButton, styles.modalButtonPrimary]}
+                  onPress={() => {
+                    setShowForgotPasswordModal(false);
+                    setForgotPasswordSuccess(false);
+                    setForgotPasswordEmail('');
+                  }}
+                >
+                  <Text style={styles.modalButtonTextPrimary}>{t('common.done')}</Text>
+                </TouchableOpacity>
+              </>
+            )}
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -363,6 +479,76 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     opacity: 0.7,
     lineHeight: 18,
+  },
+  forgotPasswordContainer: {
+    alignItems: 'flex-end',
+    marginTop: -8,
+    marginBottom: 8,
+  },
+  forgotPasswordText: {
+    color: '#FFD88A',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  modalContent: {
+    backgroundColor: '#3C2B63',
+    borderRadius: 24,
+    padding: 24,
+    width: '100%',
+    maxWidth: 400,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
+  },
+  modalTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  modalSubtitle: {
+    fontSize: 14,
+    color: '#FFFFFF',
+    opacity: 0.8,
+    marginBottom: 24,
+    textAlign: 'center',
+    lineHeight: 20,
+  },
+  modalButtonContainer: {
+    flexDirection: 'row',
+    gap: 12,
+    marginTop: 8,
+  },
+  modalButton: {
+    flex: 1,
+    paddingVertical: 14,
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  modalButtonPrimary: {
+    backgroundColor: '#FFD88A',
+  },
+  modalButtonSecondary: {
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
+  },
+  modalButtonTextPrimary: {
+    color: '#3C2B63',
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  modalButtonTextSecondary: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
   },
 });
 

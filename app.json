@@ -2,7 +2,7 @@
   "expo": {
     "name": "Resolute Plan",
     "slug": "resolute-plan",
-    "version": "1.0.3",
+    "version": "1.0.5",
     "owner": "resolute-plan",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -18,7 +18,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.resolutionstracker.app",
-      "buildNumber": "3",
+      "buildNumber": "5",
       "icon": "./assets/icon.png"
     },
     "android": {
@@ -27,7 +27,7 @@
         "backgroundColor": "#9163F2"
       },
       "package": "com.resolutionstracker.app",
-      "versionCode": 3
+      "versionCode": 5
     },
     "web": {
       "favicon": "./assets/favicon.png"

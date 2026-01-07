@@ -312,7 +312,15 @@
     "emailAlreadyExists": "Cet e-mail est déjà enregistré. Veuillez vous connecter à la place.",
     "invalidEmail": "Veuillez entrer une adresse e-mail valide.",
     "passwordError": "Le mot de passe doit contenir au moins 8 caractères.",
-    "databaseError": "Il y a eu un problème lors de la création de votre compte. Veuillez réessayer ou contacter le support si le problème persiste."
+    "databaseError": "Il y a eu un problème lors de la création de votre compte. Veuillez réessayer ou contacter le support si le problème persiste.",
+    "forgotPassword": "Mot de passe oublié ?",
+    "forgotPasswordTitle": "Réinitialiser le Mot de Passe",
+    "forgotPasswordSubtitle": "Entrez votre adresse e-mail et nous vous enverrons un lien pour réinitialiser votre mot de passe.",
+    "sendResetLink": "Envoyer le Lien de Réinitialisation",
+    "resetLinkSent": "Lien de Réinitialisation Envoyé",
+    "resetLinkSentMessage": "Nous avons envoyé un lien de réinitialisation de mot de passe à {{email}}. Veuillez vérifier votre e-mail et suivre les instructions.",
+    "resetPasswordError": "Échec de l'envoi du lien de réinitialisation. Veuillez réessayer.",
+    "error": "Erreur"
   },
   "welcome": {
     "title": "Resolute Plan",

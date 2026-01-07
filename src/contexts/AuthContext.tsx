@@ -17,6 +17,7 @@ interface AuthContextType {
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string, fullName?: string) => Promise<void>;
   signOut: () => Promise<void>;
+  resetPassword: (email: string) => Promise<void>;
   updateProfile: (updates: ProfileUpdate) => Promise<void>;
   refreshProfile: () => Promise<void>;
 }
@@ -167,9 +168,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (appStateSubscription) {
         appStateSubscription.remove();
       }
-      if (visibilityListener) {
-        visibilityListener();
-      }
       clearInterval(refreshInterval);
     };
   }, []);
@@ -248,6 +246,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await loadProfile(user.id);
   };
 
+  const resetPassword = async (email: string) => {
+    await AuthService.resetPassword(email);
+  };
+
   const value: AuthContextType = {
     user,
     profile,
@@ -256,6 +258,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     signIn,
     signUp,
     signOut,
+    resetPassword,
     updateProfile,
     refreshProfile,
   };

@@ -309,7 +309,15 @@
     "emailAlreadyExists": "This email is already registered. Please sign in instead.",
     "invalidEmail": "Please enter a valid email address.",
     "passwordError": "Password must be at least 8 characters long.",
-    "databaseError": "There was an issue creating your account. Please try again or contact support if the problem persists."
+    "databaseError": "There was an issue creating your account. Please try again or contact support if the problem persists.",
+    "forgotPassword": "Forgot Password?",
+    "forgotPasswordTitle": "Reset Password",
+    "forgotPasswordSubtitle": "Enter your email address and we'll send you a link to reset your password.",
+    "sendResetLink": "Send Reset Link",
+    "resetLinkSent": "Reset Link Sent",
+    "resetLinkSentMessage": "We've sent a password reset link to {{email}}. Please check your email and follow the instructions.",
+    "resetPasswordError": "Failed to send reset link. Please try again.",
+    "error": "Error"
   },
   "welcome": {
     "title": "Resolute Plan",

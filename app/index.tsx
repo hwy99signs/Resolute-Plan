@@ -457,7 +457,7 @@ const styles = StyleSheet.create({
     left: 40,
     width: 128,
     height: 128,
-    backgroundColor: '#FFD88A',
+    backgroundColor: 'rgba(255, 216, 138, 0.15)', // Very light golden
     borderRadius: 64,
   },
   glowBubble2: {
@@ -466,7 +466,7 @@ const styles = StyleSheet.create({
     right: 40,
     width: 160,
     height: 160,
-    backgroundColor: '#96E6B3',
+    backgroundColor: 'rgba(150, 230, 179, 0.15)', // Very light green
     borderRadius: 80,
   },
   safeArea: {
