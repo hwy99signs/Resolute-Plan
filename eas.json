@@ -26,7 +26,9 @@
     },
     "production": {
       "ios": {
-        "simulator": false
+        "simulator": false,
+        "buildConfiguration": "Release",
+        "scheme": "App"
       },
       "android": {
         "buildType": "app-bundle"

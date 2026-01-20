@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, Image, RefreshControl, Animated, Dimensions } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
+import { HelpCircle } from 'lucide-react-native';
 import { useAuth } from '../src/contexts/AuthContext';
 import { useResolves } from '../src/hooks/useResolves';
 import { useAnalytics } from '../src/hooks/useAnalytics';
@@ -10,6 +11,7 @@ import { useLanguage } from '../src/contexts/LanguageContext';
 import { translateCategory, translateResolveName } from '../src/utils/translations';
 import { rp, wp, isSmallScreen } from '../src/utils/responsive';
 import BottomTabBar from '../src/components/BottomTabBar';
+import SupportChatbot from '../src/components/SupportChatbot';
 
 export default function DashboardScreen() {
   const router = useRouter();
@@ -19,6 +21,7 @@ export default function DashboardScreen() {
   const { colors } = useTheme();
   const { t } = useLanguage();
   const [refreshing, setRefreshing] = useState(false);
+  const [showChatbot, setShowChatbot] = useState(false);
   
   // Animated values for collapsible header
   const scrollY = useRef(new Animated.Value(0)).current;
@@ -464,7 +467,25 @@ export default function DashboardScreen() {
         </View>
       </Animated.ScrollView>
 
+      {/* Support Chatbot FAB */}
+      <TouchableOpacity
+        style={[
+          styles.chatbotFAB, 
+          { 
+            backgroundColor: colors.primary,
+            bottom: Math.max(insets.bottom + 80, 100), // Position above BottomTabBar with safe area
+          }
+        ]}
+        onPress={() => setShowChatbot(true)}
+        activeOpacity={0.8}
+      >
+        <HelpCircle size={24} color="#FFFFFF" />
+      </TouchableOpacity>
+
       <BottomTabBar />
+
+      {/* Support Chatbot Modal */}
+      <SupportChatbot visible={showChatbot} onClose={() => setShowChatbot(false)} />
     </SafeAreaView>
   );
 }
@@ -739,6 +760,22 @@ const styles = StyleSheet.create({
   premiumArrow: {
     fontSize: 32,
     color: '#FFFFFF',
+  },
+  chatbotFAB: {
+    position: 'absolute',
+    right: 20,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: '#9163F2',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+    zIndex: 1000,
   },
 });
 

@@ -7,8 +7,55 @@
 # For more details, see
 #   http://developer.android.com/guide/developing/tools/proguard.html
 
+# React Native
+-keep,allowobfuscation @interface com.facebook.proguard.annotations.DoNotStrip
+-keep,allowobfuscation @interface com.facebook.proguard.annotations.KeepGettersAndSetters
+-keep @com.facebook.proguard.annotations.DoNotStrip class *
+-keepclassmembers class * {
+    @com.facebook.proguard.annotations.DoNotStrip *;
+}
+-keepclassmembers @com.facebook.proguard.annotations.KeepGettersAndSetters class * {
+    void set*(***);
+    *** get*();
+}
+-keepclassmembers class * {
+    @com.facebook.react.uimanager.UIProp <fields>;
+}
+-keepclassmembers class * {
+    @com.facebook.react.uimanager.annotations.ReactProp <methods>;
+}
+-keepclassmembers class * {
+    @com.facebook.react.uimanager.annotations.ReactPropGroup <methods>;
+}
+-dontwarn com.facebook.react.**
+-keep,includedescriptorclasses class com.facebook.react.bridge.** { *; }
+-keepclassmembers class com.facebook.react.bridge.** { *; }
+
+# React Native - Hermes
+-keep class com.facebook.hermes.unicode.** { *; }
+-keep class com.facebook.jni.** { *; }
+
 # react-native-reanimated
 -keep class com.swmansion.reanimated.** { *; }
 -keep class com.facebook.react.turbomodule.** { *; }
+
+# Expo
+-keepclassmembers class * {
+  @expo.modules.core.interfaces.DoNotStrip *;
+}
+-keep @expo.modules.core.interfaces.DoNotStrip class *
+-keepclassmembers class * {
+  @expo.modules.core.interfaces.ExpoProp *;
+}
+
+# Keep native methods
+-keepclasseswithmembernames class * {
+    native <methods>;
+}
+
+# Keep JavaScript interface methods
+-keepclassmembers class * {
+    @android.webkit.JavascriptInterface <methods>;
+}
 
 # Add any project specific keep options here:

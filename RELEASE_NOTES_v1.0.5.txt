@@ -1,0 +1,44 @@
+🎉 What's New in Version 1.0.5
+
+NEW FEATURES:
+✅ Password Recovery - Forgot your password? No problem! Now you can easily reset it via email
+✅ Improved Welcome Screen - Cleaner, more refined design with subtle background elements
+
+IMPROVEMENTS:
+🔧 Enhanced authentication security
+🔧 Better error handling
+🔧 Improved user experience
+
+Update now for the best Resolute Plan experience!
+
+---
+
+🎉 Novedades en la Versión 1.0.5
+
+NUEVAS FUNCIONES:
+✅ Recuperación de Contraseña - ¿Olvidaste tu contraseña? ¡No hay problema! Ahora puedes restablecerla fácilmente por correo electrónico
+✅ Pantalla de Bienvenida Mejorada - Diseño más limpio y refinado con elementos de fondo sutiles
+
+MEJORAS:
+🔧 Seguridad de autenticación mejorada
+🔧 Mejor manejo de errores
+🔧 Experiencia de usuario mejorada
+
+¡Actualiza ahora para disfrutar de la mejor experiencia en Resolute Plan!
+
+---
+
+🎉 Nouveautés de la Version 1.0.5
+
+NOUVELLES FONCTIONNALITÉS :
+✅ Récupération de Mot de Passe - Mot de passe oublié ? Pas de problème ! Vous pouvez maintenant le réinitialiser facilement par e-mail
+✅ Écran d'Accueil Amélioré - Design plus épuré avec des éléments d'arrière-plan subtils
+
+AMÉLIORATIONS :
+🔧 Sécurité d'authentification renforcée
+🔧 Meilleure gestion des erreurs
+🔧 Expérience utilisateur améliorée
+
+Mettez à jour maintenant pour profiter de la meilleure expérience Resolute Plan !
+
+

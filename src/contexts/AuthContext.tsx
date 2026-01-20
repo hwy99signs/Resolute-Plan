@@ -131,13 +131,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     );
 
-    // Set up app state listener to refresh session when app comes to foreground
-    const appStateSubscription = AppState.addEventListener('change', async (nextAppState: AppStateStatus) => {
-      if (nextAppState === 'active') {
-        // App has come to the foreground, refresh session
-        await refreshSessionOnForeground();
-      }
-    });
+    // Set up app state listener to refresh session when app comes to foreground (mobile only)
+    let appStateSubscription: ReturnType<typeof AppState.addEventListener> | null = null;
+    if (!isWeb) {
+      appStateSubscription = AppState.addEventListener('change', async (nextAppState: AppStateStatus) => {
+        if (nextAppState === 'active') {
+          // App has come to the foreground, refresh session
+          await refreshSessionOnForeground();
+        }
+      });
+    }
 
     // Set up periodic session refresh (every 30 minutes) to keep session alive
     const refreshInterval = setInterval(async () => {

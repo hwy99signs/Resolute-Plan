@@ -1,0 +1,20 @@
+═══════════════════════════════════════════════════════
+   CORRECT COMMAND TO RUN
+═══════════════════════════════════════════════════════
+
+COPY THIS EXACT COMMAND:
+------------------------
+
+cd "C:\Users\Shilley Pc\packq\New Year Resolutions Tracker" ; npx eas-cli build --platform android --profile production
+
+
+IMPORTANT:
+----------
+- Notice the QUOTES around the path
+- Copy the ENTIRE line above
+- Paste into PowerShell
+- Press ENTER
+
+
+═══════════════════════════════════════════════════════
+

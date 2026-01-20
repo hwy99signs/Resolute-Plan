@@ -110,12 +110,12 @@ export default function NotificationsScreen() {
       // Get list of enabled notification types
       const enabledTypes: string[] = [];
       if (settings.paktReminders) enabledTypes.push(t('notifications.resolveReminders') || t('notifications.paktReminders') || 'Resolve Reminders');
-      if (settings.milestoneReminders) enabledTypes.push(t('notifications.milestoneDeadlines'));
-      if (settings.dailyMotivation) enabledTypes.push(t('notifications.dailyMotivation'));
-      if (settings.weeklyReports) enabledTypes.push(t('notifications.weeklyProgressReports'));
-      if (settings.achievements) enabledTypes.push(t('notifications.achievementAlerts'));
-      if (settings.streakReminders) enabledTypes.push(t('notifications.streakProtection'));
-      if (settings.dailyHabitReminders) enabledTypes.push(t('notifications.dailyHabitReminders'));
+      if (settings.milestoneReminders) enabledTypes.push(t('notifications.milestoneDeadlines') || 'Milestone Deadlines');
+      if (settings.dailyMotivation) enabledTypes.push(t('notifications.dailyMotivation') || 'Daily Motivation');
+      if (settings.weeklyReports) enabledTypes.push(t('notifications.weeklyProgressReports') || 'Weekly Progress Reports');
+      if (settings.achievements) enabledTypes.push(t('notifications.achievementAlerts') || 'Achievement Alerts');
+      if (settings.streakReminders) enabledTypes.push(t('notifications.streakProtection') || 'Streak Protection');
+      if (settings.dailyHabitReminders) enabledTypes.push(t('notifications.dailyHabitReminders') || 'Daily Habit Reminders');
 
       // Send a test notification
       const notificationTitle = enabledTypes.length > 0

@@ -26,38 +26,27 @@ export default function InsightsScreen() {
   const screenWidth = Dimensions.get('window').width;
   const screenHeight = Dimensions.get('window').height;
   
-  // Responsive adjustments based on screen size - memoized to prevent module-level evaluation
-  const responsiveValues = useMemo(() => {
-    const isVeryLargeScreen = screenWidth >= 428; // iPhone 13 Pro Max and larger
-    const isTablet = screenWidth >= 768;
-    
-    // Better responsive card width calculation
-    const horizontalPadding = rp(16) * 2;
-    const cardGap = getSpacing(12);
-    const statCardWidth = (screenWidth - horizontalPadding - cardGap) / 2;
-    
-    // Header dimensions
-    const HEADER_MAX_HEIGHT = isVeryLargeScreen ? rp(160) : rp(140);
-    const HEADER_MIN_HEIGHT = isVeryLargeScreen ? rp(80) : rp(70);
-    const HEADER_SCROLL_DISTANCE = HEADER_MAX_HEIGHT - HEADER_MIN_HEIGHT;
-    
-    // Title sizes
-    const baseTitleSize = isVeryLargeScreen ? rf(32) : rf(28);
-    const minTitleSize = isVeryLargeScreen ? rf(22) : rf(20);
-    
-    return {
-      isVeryLargeScreen,
-      isTablet,
-      statCardWidth,
-      HEADER_MAX_HEIGHT,
-      HEADER_MIN_HEIGHT,
-      HEADER_SCROLL_DISTANCE,
-      baseTitleSize,
-      minTitleSize,
-    };
-  }, [screenWidth]);
-
-  const { isVeryLargeScreen, isTablet, statCardWidth, HEADER_MAX_HEIGHT, HEADER_MIN_HEIGHT, HEADER_SCROLL_DISTANCE, baseTitleSize, minTitleSize } = responsiveValues;
+  // Responsive adjustments based on screen size
+  // Note: Recalculated on every render to ensure responsiveness to dimension/orientation changes
+  const isVeryLargeScreen = screenWidth >= 428; // iPhone 13 Pro Max and larger
+  const isTablet = screenWidth >= 768;
+  
+  // Better responsive card width calculation
+  const horizontalPadding = rp(16) * 2;
+  const cardGap = getSpacing(12);
+  const statCardWidth = (screenWidth - horizontalPadding - cardGap) / 2;
+  
+  // Header dimensions
+  const HEADER_MAX_HEIGHT = isVeryLargeScreen ? rp(160) : rp(140);
+  const HEADER_MIN_HEIGHT = isVeryLargeScreen ? rp(80) : rp(70);
+  const HEADER_SCROLL_DISTANCE = HEADER_MAX_HEIGHT - HEADER_MIN_HEIGHT;
+  
+  // Title sizes
+  const baseTitleSize = isVeryLargeScreen ? rf(32) : rf(28);
+  const minTitleSize = isVeryLargeScreen ? rf(22) : rf(20);
+  
+  // Responsive values are now directly available as const variables above
+  // (removed responsiveValues object and destructuring to fix variable redeclaration)
 
   // Animated values for collapsible header
   const scrollY = useRef(new Animated.Value(0)).current;

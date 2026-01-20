@@ -1,0 +1,49 @@
+═══════════════════════════════════════════════════════
+   BUILD YOUR APP FOR GOOGLE PLAY STORE
+═══════════════════════════════════════════════════════
+
+STEP 1: OPEN POWERSHELL
+------------------------
+- Press Windows Key
+- Type "PowerShell"
+- Click "Windows PowerShell"
+
+
+STEP 2: COPY & PASTE THIS COMMAND
+----------------------------------
+cd "C:\Users\Shilley Pc\packq\New Year Resolutions Tracker"
+npx eas-cli build --platform android --profile production
+
+
+STEP 3: PRESS ENTER
+--------------------
+The build will start!
+
+
+WHAT YOU'LL SEE:
+----------------
+1. Login prompt (enter your Expo email & password)
+2. Upload progress (2-3 minutes)
+3. Build URL (copy this!)
+4. Build time: 15-20 minutes
+
+
+WHEN BUILD IS DONE:
+-------------------
+1. Download the .aab file from the link
+2. Go to: https://play.google.com/console
+3. Upload the .aab file
+4. Add release notes (see RELEASE_NOTES_v1.0.5.txt)
+5. Submit for review
+
+
+BUILD STATUS:
+-------------
+Check anytime at:
+https://expo.dev/accounts/resolute-plan/projects/resolute-plan/builds
+
+
+═══════════════════════════════════════════════════════
+            READY? OPEN POWERSHELL NOW!
+═══════════════════════════════════════════════════════
+

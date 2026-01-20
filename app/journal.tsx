@@ -408,7 +408,10 @@ export default function JournalScreen() {
       }
 
       // Download file using legacy API
-      const documentDir = FileSystemLegacy.documentDirectory || FileSystemLegacy.cacheDirectory || '';
+      const documentDir = FileSystemLegacy.documentDirectory || FileSystemLegacy.cacheDirectory;
+      if (!documentDir) {
+        throw new Error('No file system directory available');
+      }
       const fileUri = documentDir + fileName;
       const downloadResult = await FileSystemLegacy.downloadAsync(mediaItem.url, fileUri);
 
@@ -612,9 +615,13 @@ export default function JournalScreen() {
           }
         } else {
           // For remote URLs, download first
+          const documentDir = FileSystemLegacy.documentDirectory || FileSystemLegacy.cacheDirectory;
+          if (!documentDir) {
+            throw new Error('No file system directory available for download');
+          }
           const downloadResult = await FileSystemLegacy.downloadAsync(
             url,
-            (FileSystemLegacy.documentDirectory || FileSystemLegacy.cacheDirectory || '') + `temp_${Date.now()}.jpg`
+            documentDir + `temp_${Date.now()}.jpg`
           );
           if (downloadResult.uri) {
             try {
@@ -665,7 +672,8 @@ export default function JournalScreen() {
         month: 'long',
         day: 'numeric'
       });
-      const paktName = entry.resolve_id ? getPaktName(entry.resolve_id) : null;
+      const resolveId = entry.resolve_id || (entry as any).pakt_id;
+      const paktName = resolveId ? getPaktName(resolveId) : null;
 
       // Process media for PDF with error handling and timeout
       let mediaHTML = '';
@@ -1149,10 +1157,10 @@ export default function JournalScreen() {
                   <Text style={[styles.entryTitle, { color: colors.text }]}>{entry.title}</Text>
                 )}
 
-                {entry.resolve_id && (
+                {(entry.resolve_id || (entry as any).pakt_id) && (
                   <View style={[styles.paktTag, { backgroundColor: `${colors.primary}20` }]}>
                     <Text style={[styles.paktTagText, { color: colors.primary }]}>
-                      {t('journal.linkedToResolve')}: {getPaktName(entry.resolve_id)}
+                      {t('journal.linkedToResolve')}: {getPaktName(entry.resolve_id || (entry as any).pakt_id)}
                     </Text>
                   </View>
                 )}
