@@ -537,7 +537,7 @@ export default function SupportChatbot({ visible, onClose }: SupportChatbotProps
                 </View>
                 <View>
                   <Text style={[styles.headerTitle, dynamicStyles.headerTitle]}>
-                    Support Chat
+                    Ronzae Bot
                   </Text>
                   <Text style={[styles.headerSubtitle, { color: colors.textSecondary }]}>
                     We're here to help
