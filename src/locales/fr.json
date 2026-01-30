@@ -320,6 +320,7 @@
     "resetLinkSent": "Lien de Réinitialisation Envoyé",
     "resetLinkSentMessage": "Nous avons envoyé un lien de réinitialisation de mot de passe à {{email}}. Veuillez vérifier votre e-mail et suivre les instructions.",
     "resetPasswordError": "Échec de l'envoi du lien de réinitialisation. Veuillez réessayer.",
+    "rateLimitError": "Pour des raisons de sécurité, veuillez patienter {{seconds}} secondes avant de réessayer.",
     "error": "Erreur"
   },
   "welcome": {
@@ -604,7 +605,6 @@
     "motivation13": "La cohérence bat l'intensité. Continuez de vous présenter ! 🔥",
     "motivation14": "Vos objectifs sont à portée de main. Continuez d'avancer ! 🚀",
     "motivation15": "Chaque jalon que vous complétez est la preuve de votre force ! 💪",
-    "dailyMotivationLabel": "Motivation Quotidienne",
     "quote1": "Le secret pour avancer est de commencer.",
     "quote1Author": "Mark Twain",
     "quote2": "Vous n'êtes jamais trop vieux pour vous fixer un autre objectif ou rêver un nouveau rêve.",

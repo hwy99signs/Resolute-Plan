@@ -320,6 +320,7 @@
     "resetLinkSent": "Enlace de Restablecimiento Enviado",
     "resetLinkSentMessage": "Hemos enviado un enlace de restablecimiento de contraseña a {{email}}. Por favor revisa tu correo electrónico y sigue las instrucciones.",
     "resetPasswordError": "Error al enviar el enlace de restablecimiento. Por favor intenta de nuevo.",
+    "rateLimitError": "Por razones de seguridad, por favor espera {{seconds}} segundos antes de volver a intentar.",
     "error": "Error"
   },
   "welcome": {

@@ -317,6 +317,7 @@
     "resetLinkSent": "Reset Link Sent",
     "resetLinkSentMessage": "We've sent a password reset link to {{email}}. Please check your email and follow the instructions.",
     "resetPasswordError": "Failed to send reset link. Please try again.",
+    "rateLimitError": "For security purposes, please wait {{seconds}} seconds before requesting again.",
     "error": "Error"
   },
   "welcome": {

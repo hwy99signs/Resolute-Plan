@@ -299,7 +299,8 @@ export default function AuthScreen() {
                     style={[styles.modalButton, styles.modalButtonPrimary, forgotPasswordLoading && styles.submitButtonDisabled]}
                     onPress={async () => {
                       if (!forgotPasswordEmail) {
-                        Alert.alert(t('auth.error'), t('auth.invalidEmail'));
+                        setErrorMessage(t('auth.invalidEmail'));
+                        setShowErrorModal(true);
                         return;
                       }
 
@@ -308,10 +309,20 @@ export default function AuthScreen() {
                         await resetPassword(forgotPasswordEmail);
                         setForgotPasswordSuccess(true);
                       } catch (error: any) {
-                        Alert.alert(
-                          t('auth.error'),
-                          error.message || t('auth.resetPasswordError')
-                        );
+                        // Parse Supabase rate limit error and translate it
+                        let translatedMessage = t('auth.resetPasswordError');
+                        const errorMsg = error.message || '';
+
+                        // Check for rate limit error pattern from Supabase
+                        const rateLimitMatch = errorMsg.match(/request this after (\d+) seconds/i);
+                        if (rateLimitMatch) {
+                          translatedMessage = t('auth.rateLimitError', { seconds: rateLimitMatch[1] });
+                        } else if (errorMsg) {
+                          translatedMessage = errorMsg;
+                        }
+
+                        setErrorMessage(translatedMessage);
+                        setShowErrorModal(true);
                       } finally {
                         setForgotPasswordLoading(false);
                       }
