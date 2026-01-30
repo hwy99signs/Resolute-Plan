@@ -27,7 +27,7 @@
         "backgroundColor": "#9163F2"
       },
       "package": "com.resolutionstracker.app",
-      "versionCode": 2
+      "versionCode": 3
     },
     "web": {
       "favicon": "./assets/favicon.png"

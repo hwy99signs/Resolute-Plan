@@ -555,6 +555,7 @@ const styles = StyleSheet.create({
     color: '#3C2B63',
     fontSize: 16,
     fontWeight: '700',
+    textAlign: 'center',
   },
   modalButtonTextSecondary: {
     color: '#FFFFFF',
