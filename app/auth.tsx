@@ -59,10 +59,10 @@ export default function AuthScreen() {
       }
     } catch (error: any) {
       console.error('Auth error:', error);
-      
+
       // Provide more helpful error messages
       let errorMessage = error.message || t('auth.failedToAuthenticate');
-      
+
       // Handle network errors specifically
       if (error.message?.includes('Network request failed') || error.message?.includes('fetch') || error.message?.includes('AuthRetryableFetchError')) {
         errorMessage = t('auth.networkError') || 'Network connection failed. Please check your internet connection and try again.';
@@ -75,7 +75,7 @@ export default function AuthScreen() {
       } else if (error.message?.includes('Database error') || error.message?.includes('saving new user')) {
         errorMessage = t('auth.databaseError') || 'There was an issue creating your account. Please try again or contact support if the problem persists.';
       }
-      
+
       setErrorMessage(errorMessage);
       setShowErrorModal(true);
     } finally {
@@ -85,7 +85,7 @@ export default function AuthScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <KeyboardAvoidingView 
+      <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardView}
       >
@@ -267,7 +267,7 @@ export default function AuthScreen() {
               <>
                 <Text style={styles.modalTitle}>{t('auth.forgotPasswordTitle')}</Text>
                 <Text style={styles.modalSubtitle}>{t('auth.forgotPasswordSubtitle')}</Text>
-                
+
                 <View style={styles.inputContainer}>
                   <Text style={styles.label}>{t('auth.email')}</Text>
                   <TextInput
@@ -294,7 +294,7 @@ export default function AuthScreen() {
                   >
                     <Text style={styles.modalButtonTextSecondary}>{t('common.cancel')}</Text>
                   </TouchableOpacity>
-                  
+
                   <TouchableOpacity
                     style={[styles.modalButton, styles.modalButtonPrimary, forgotPasswordLoading && styles.submitButtonDisabled]}
                     onPress={async () => {
@@ -302,7 +302,7 @@ export default function AuthScreen() {
                         Alert.alert(t('auth.error'), t('auth.invalidEmail'));
                         return;
                       }
-                      
+
                       setForgotPasswordLoading(true);
                       try {
                         await resetPassword(forgotPasswordEmail);
@@ -332,7 +332,7 @@ export default function AuthScreen() {
                 <Text style={styles.modalSubtitle}>
                   {t('auth.resetLinkSentMessage', { email: forgotPasswordEmail })}
                 </Text>
-                
+
                 <TouchableOpacity
                   style={[styles.modalButton, styles.modalButtonPrimary]}
                   onPress={() => {
@@ -341,7 +341,7 @@ export default function AuthScreen() {
                     setForgotPasswordEmail('');
                   }}
                 >
-                  <Text style={styles.modalButtonTextPrimary}>{t('common.done')}</Text>
+                  <Text style={styles.modalButtonTextPrimary}>{t('common.ok')}</Text>
                 </TouchableOpacity>
               </>
             )}

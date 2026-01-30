@@ -84,7 +84,11 @@ export class AuthService {
     // For mobile: use the app scheme for deep linking
     let redirectTo: string;
     
-    if (typeof window !== 'undefined') {
+    // Check if we're in a browser environment (not React Native)
+    // In React Native, window exists but window.location is undefined
+    const isWeb = typeof window !== 'undefined' && typeof window.location?.origin === 'string';
+    
+    if (isWeb) {
       // Web platform - use environment variable or current origin
       const siteUrl = process.env.EXPO_PUBLIC_SITE_URL || window.location.origin;
       redirectTo = `${siteUrl}/reset-password`;

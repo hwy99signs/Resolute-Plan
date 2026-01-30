@@ -2,7 +2,7 @@
   "expo": {
     "name": "Resolute Plan",
     "slug": "resolute-plan",
-    "version": "1.0.5",
+    "version": "1.0.6",
     "owner": "resolute-plan",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -27,7 +27,7 @@
         "backgroundColor": "#9163F2"
       },
       "package": "com.resolutionstracker.app",
-      "versionCode": 5
+      "versionCode": 2
     },
     "web": {
       "favicon": "./assets/favicon.png"

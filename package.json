@@ -95,6 +95,9 @@
     "eas:build:android": "npx eas-cli build --platform android",
     "eas:build:ios": "npx eas-cli build --platform ios",
     "eas:build:all": "npx eas-cli build --platform all",
+    "build:production:android": "npx eas-cli build --platform android --profile production",
+    "build:production:ios": "npx eas-cli build --platform ios --profile production",
+    "build:preview:android": "npx eas-cli build --platform android --profile preview",
     "eas:submit": "npx eas-cli submit",
     "eas:update": "npx eas-cli update"
   }

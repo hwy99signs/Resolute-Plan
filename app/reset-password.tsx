@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, KeyboardAvoidingView, Platform, ScrollView, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
+import * as Linking from 'expo-linking';
 import { useLanguage } from '../src/contexts/LanguageContext';
 import { supabase } from '../src/lib/supabase';
 
@@ -9,7 +10,7 @@ export default function ResetPasswordScreen() {
   const router = useRouter();
   const { t } = useLanguage();
   const params = useLocalSearchParams();
-  
+
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -20,17 +21,53 @@ export default function ResetPasswordScreen() {
   const [sessionError, setSessionError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Check if we have a recovery token in the URL and establish session
+    // Parse URL fragment to extract tokens (Supabase sends tokens in URL fragment like #access_token=xxx)
+    const parseUrlFragment = (url: string) => {
+      try {
+        const fragmentIndex = url.indexOf('#');
+        if (fragmentIndex === -1) return null;
+
+        const fragment = url.substring(fragmentIndex + 1);
+        const params = new URLSearchParams(fragment);
+
+        return {
+          access_token: params.get('access_token'),
+          refresh_token: params.get('refresh_token'),
+          type: params.get('type'),
+        };
+      } catch (e) {
+        console.error('Error parsing URL fragment:', e);
+        return null;
+      }
+    };
+
     const initializeSession = async () => {
-      const accessToken = params.access_token as string;
-      const type = params.type as string;
-      
+      let accessToken = params.access_token as string;
+      let refreshToken = params.refresh_token as string;
+      let type = params.type as string;
+
+      // If not in query params, try to get from the current URL (fragment)
+      if (!accessToken) {
+        try {
+          const url = await Linking.getInitialURL();
+          if (url) {
+            const fragmentParams = parseUrlFragment(url);
+            if (fragmentParams) {
+              accessToken = fragmentParams.access_token || '';
+              refreshToken = fragmentParams.refresh_token || '';
+              type = fragmentParams.type || '';
+            }
+          }
+        } catch (e) {
+          console.error('Error getting initial URL:', e);
+        }
+      }
+
       if (accessToken && type === 'recovery') {
         try {
-          // Await session establishment before allowing password reset
           const { data, error } = await supabase.auth.setSession({
             access_token: accessToken,
-            refresh_token: params.refresh_token as string || '',
+            refresh_token: refreshToken || '',
           });
 
           if (error) {
@@ -38,7 +75,6 @@ export default function ResetPasswordScreen() {
             setSessionError(error.message);
             setHasToken(false);
           } else if (data.session) {
-            // Session successfully established
             setHasToken(true);
             setSessionError(null);
           } else {
@@ -57,6 +93,36 @@ export default function ResetPasswordScreen() {
     };
 
     initializeSession();
+
+    // Listen for URL changes (in case the app was already open)
+    const subscription = Linking.addEventListener('url', async ({ url }) => {
+      const fragmentParams = parseUrlFragment(url);
+      if (fragmentParams?.access_token && fragmentParams.type === 'recovery') {
+        setSessionLoading(true);
+        try {
+          const { data, error } = await supabase.auth.setSession({
+            access_token: fragmentParams.access_token,
+            refresh_token: fragmentParams.refresh_token || '',
+          });
+
+          if (error) {
+            setSessionError(error.message);
+            setHasToken(false);
+          } else if (data.session) {
+            setHasToken(true);
+            setSessionError(null);
+          }
+        } catch (err: any) {
+          setSessionError(err.message);
+          setHasToken(false);
+        }
+        setSessionLoading(false);
+      }
+    });
+
+    return () => {
+      subscription.remove();
+    };
   }, [params]);
 
   const handleResetPassword = async () => {
@@ -141,7 +207,7 @@ export default function ResetPasswordScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <KeyboardAvoidingView 
+      <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardView}
       >

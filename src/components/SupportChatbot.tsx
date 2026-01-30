@@ -25,7 +25,6 @@ type BotStep = {
   requiresInput?: boolean;
   requiresContactInfo?: boolean;
 };
-
 type BotSteps = {
   [key: string]: BotStep;
 };
