@@ -121,6 +121,26 @@ function DeepLinkHandler() {
   const router = useRouter();
   const hasHandledDeepLink = useRef(false);
 
+  // Parse URL fragment to extract tokens
+  const parseUrlFragment = (url: string) => {
+    try {
+      const fragmentIndex = url.indexOf('#');
+      if (fragmentIndex === -1) return null;
+
+      const fragment = url.substring(fragmentIndex + 1);
+      const params = new URLSearchParams(fragment);
+
+      return {
+        access_token: params.get('access_token'),
+        refresh_token: params.get('refresh_token'),
+        type: params.get('type'),
+      };
+    } catch (e) {
+      console.error('Error parsing URL fragment:', e);
+      return null;
+    }
+  };
+
   useEffect(() => {
     // Check if app was opened with a deep link
     const handleInitialURL = async () => {
@@ -131,11 +151,23 @@ function DeepLinkHandler() {
           // Check if it's a password reset link
           if (url.includes('reset-password') && (url.includes('#access_token') || url.includes('type=recovery'))) {
             hasHandledDeepLink.current = true;
-            console.log('Navigating to reset-password screen');
-            // Small delay to ensure router is ready
-            setTimeout(() => {
-              router.replace('/reset-password');
-            }, 100);
+
+            // Parse tokens from URL fragment
+            const tokens = parseUrlFragment(url);
+            if (tokens?.access_token) {
+              console.log('Navigating to reset-password screen with tokens');
+              // Pass tokens as query params since URL fragments get lost
+              setTimeout(() => {
+                router.replace({
+                  pathname: '/reset-password',
+                  params: {
+                    access_token: tokens.access_token,
+                    refresh_token: tokens.refresh_token || '',
+                    type: tokens.type || 'recovery',
+                  },
+                });
+              }, 100);
+            }
           }
         }
       } catch (e) {
@@ -150,7 +182,19 @@ function DeepLinkHandler() {
       console.log('URL event:', url);
       if (url.includes('reset-password') && (url.includes('#access_token') || url.includes('type=recovery'))) {
         console.log('Navigating to reset-password screen from URL event');
-        router.replace('/reset-password');
+
+        // Parse tokens from URL fragment
+        const tokens = parseUrlFragment(url);
+        if (tokens?.access_token) {
+          router.replace({
+            pathname: '/reset-password',
+            params: {
+              access_token: tokens.access_token,
+              refresh_token: tokens.refresh_token || '',
+              type: tokens.type || 'recovery',
+            },
+          });
+        }
       }
     });
 
