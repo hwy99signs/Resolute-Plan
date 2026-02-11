@@ -4,6 +4,16 @@ import { ArrowLeft, Trophy, Star, Flame, Target, TrendingUp, Award, Lock, Share2
 import { useAchievements } from '../../hooks/useAchievements';
 import type { Achievement } from '../../types';
 
+type AchievementWithStatus = {
+  type: string;
+  title: string;
+  requirement: string;
+  icon: string;
+  earned: boolean;
+  earnedDate?: string;
+  description: string;
+};
+
 type AchievementBoardLiveProps = {
   onBack: () => void;
   isDarkMode: boolean;
@@ -36,7 +46,7 @@ export default function AchievementBoardLive({ onBack, isDarkMode }: Achievement
   ];
 
   // Merge with earned achievements
-  const achievementsWithStatus = allAchievements.map(preset => {
+  const achievementsWithStatus: AchievementWithStatus[] = allAchievements.map(preset => {
     const earned = achievements.find(a => a.type === preset.type);
     return {
       ...preset,

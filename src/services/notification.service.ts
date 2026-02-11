@@ -133,8 +133,8 @@ export class NotificationService {
     await this.createNotification({
       user_id: userId,
       type: 'welcome',
-      title: '🎉 Welcome to resolviq!',
-      message: `Hi ${name}! Welcome to resolviq. We're excited to help you achieve your goals. Start by creating your first Resolve and breaking it down into milestones. Let's make this year your best one yet! 💪`,
+      title: '🎉 Welcome to Resolute Plan pro!',
+      message: `Hi ${name}! Welcome to Resolute Plan pro. We're excited to help you achieve your goals. Start by creating your first Resolve and breaking it down into milestones. Let's make this year your best one yet! 💪`,
       metadata: { welcome: true, created_at: new Date().toISOString() },
     });
   }
@@ -187,6 +187,7 @@ export class NotificationService {
     milestoneId: string,
     resolveId: string
   ): Promise<void> {
+    // Create notification in database
     await this.createNotification({
       user_id: userId,
       type: 'milestone_achieved',
@@ -194,6 +195,19 @@ export class NotificationService {
       message: `You've completed "${milestoneName}" in "${resolveName}"`,
       metadata: { milestone_id: milestoneId, resolve_id: resolveId },
     });
+
+    // Send device notification
+    try {
+      const { PushNotificationService } = await import('./push-notification.service');
+      await PushNotificationService.sendLocalNotification(
+        'Milestone Achieved! 🎉',
+        `You've completed "${milestoneName}" in "${resolveName}"`,
+        { type: 'milestone_achieved', milestone_id: milestoneId, resolve_id: resolveId }
+      );
+    } catch (error) {
+      console.error('Error sending device notification:', error);
+      // Don't fail if device notification fails
+    }
   }
 
   /**
@@ -243,6 +257,7 @@ export class NotificationService {
    * Helper: Create Resolve completed notification
    */
   static async notifyResolveCompleted(userId: string, resolveName: string, resolveId: string): Promise<void> {
+    // Create notification in database
     await this.createNotification({
       user_id: userId,
       type: 'pakt_completed',
@@ -250,6 +265,19 @@ export class NotificationService {
       message: `Congratulations! You've completed "${resolveName}"`,
       metadata: { resolve_id: resolveId },
     });
+
+    // Send device notification
+    try {
+      const { PushNotificationService } = await import('./push-notification.service');
+      await PushNotificationService.sendLocalNotification(
+        'Resolve Completed! 🎊',
+        `Congratulations! You've completed "${resolveName}"`,
+        { type: 'pakt_completed', resolve_id: resolveId }
+      );
+    } catch (error) {
+      console.error('Error sending device notification:', error);
+      // Don't fail if device notification fails
+    }
   }
 
   /**

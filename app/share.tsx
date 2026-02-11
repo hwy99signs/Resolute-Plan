@@ -14,7 +14,7 @@ export default function ShareScreen() {
   const router = useRouter();
   const { colors } = useTheme();
   const { t } = useLanguage();
-  const { Resolves } = useResolves();
+  const { resolves: Resolves } = useResolves();
 
   const handleSharePakt = async (resolve: any) => {
     try {
@@ -64,11 +64,11 @@ export default function ShareScreen() {
           </View>
         ) : (
           <View style={styles.paktsList}>
-            {Resolves.map((Resolve) => (
+            {Resolves.map((resolve) => (
               <TouchableOpacity
                 key={resolve.id}
                 style={[styles.paktCard, { backgroundColor: colors.surface }]}
-                onPress={() => handleSharePakt(Resolve)}
+                onPress={() => handleSharePakt(resolve)}
               >
                 <View style={styles.paktInfo}>
                   <Text style={[styles.paktName, { color: colors.text }]}>{translateResolveName(resolve.name)}</Text>

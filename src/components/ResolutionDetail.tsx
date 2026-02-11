@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Resolution } from '../App';
+// Legacy web component - Resolution type not used in React Native app
+// import type { Resolve } from '../types';
 import { ArrowLeft, Plus, Trophy, TrendingUp } from 'lucide-react';
 import { MilestoneItem } from './MilestoneItem';
 import { AddMilestoneModal } from './AddMilestoneModal';

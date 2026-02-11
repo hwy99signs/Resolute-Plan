@@ -54,9 +54,10 @@ export default function AllPaktsScreen() {
     if (resolve.progress !== undefined && resolve.progress !== null) {
       return resolve.progress;
     }
-    if (!resolve.milestones || resolve.milestones.length === 0) return 0;
-    const completed = resolve.milestones.filter((m: any) => m.completed).length;
-    return Math.round((completed / resolve.milestones.length) * 100);
+    const milestones = (resolve as any).milestones;
+    if (!milestones || milestones.length === 0) return 0;
+    const completed = milestones.filter((m: any) => m.completed).length;
+    return Math.round((completed / milestones.length) * 100);
   };
 
   // Get due date text
@@ -122,8 +123,9 @@ export default function AllPaktsScreen() {
               const progress = getPaktProgress(resolve);
               const icon = getCategoryIcon(resolve.category || '');
               const color = getCategoryColor(resolve.category || '');
-              const completedMilestones = resolve.milestones?.filter((m: any) => m.completed).length || 0;
-              const totalMilestones = resolve.milestones?.length || 0;
+              const milestones = (resolve as any).milestones || [];
+              const completedMilestones = milestones.filter((m: any) => m.completed).length || 0;
+              const totalMilestones = milestones.length || 0;
               const dueDate = getDueDateText(resolve.deadline);
 
               return (

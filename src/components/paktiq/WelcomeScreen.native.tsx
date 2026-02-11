@@ -11,7 +11,7 @@ export default function WelcomeScreen({ onGetStarted, onExplore }: WelcomeScreen
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
-        <Text style={styles.title}>resolviq</Text>
+        <Text style={styles.title}>Resolute Plan pro</Text>
         <Text style={styles.subtitle}>Smart Commitment Tracking</Text>
         <Text style={styles.description}>
           Make commitments. Track progress. Achieve your goals with intelligence.

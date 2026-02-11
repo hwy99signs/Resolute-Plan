@@ -4,12 +4,12 @@ import { useRouter, usePathname } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Home, BarChart3, Plus, Calendar, User } from 'lucide-react-native';
 import { useTheme } from '../contexts/ThemeContext';
-import { getIconSize, getSpacing } from '../utils/responsive';
+import { getIconSize, getSpacing, rp, isSmallScreen } from '../utils/responsive';
 
 export default function BottomTabBar() {
   const router = useRouter();
   const pathname = usePathname();
-  const { colors } = useTheme();
+  const { colors, isDarkMode } = useTheme();
   const insets = useSafeAreaInsets();
 
   const tabs = [
@@ -27,16 +27,27 @@ export default function BottomTabBar() {
     return pathname === route || pathname.startsWith(route + '/');
   };
 
-  const iconSize = getIconSize(24);
-  const horizontalPadding = getSpacing(16);
+  const iconSize = getIconSize(22);
+  const horizontalPadding = rp(16);
   const bottomPadding = Math.max(insets.bottom, getSpacing(8));
+
+  // Determine icon color based on theme
+  const iconColor = isDarkMode ? '#FFFFFF' : '#666666';
+  const activeIconColor = isDarkMode ? '#FFFFFF' : colors.primary;
+
+  // Determine background colors based on theme
+  const containerBg = isDarkMode ? '#2A2A2A' : '#FFFFFF';
+  const activeBg = isDarkMode ? '#3A3A3A' : colors.primaryLight;
 
   return (
     <View style={[
       styles.container, 
       { 
+        backgroundColor: containerBg,
         paddingBottom: bottomPadding,
         paddingHorizontal: horizontalPadding,
+        shadowColor: isDarkMode ? '#000' : 'rgba(0, 0, 0, 0.1)',
+        shadowOpacity: isDarkMode ? 0.3 : 0.1,
       }
     ]}>
       {tabs.map((tab) => {
@@ -52,11 +63,11 @@ export default function BottomTabBar() {
           >
             <View style={[
               styles.iconContainer,
-              active && styles.iconContainerActive
+              active && { backgroundColor: activeBg }
             ]}>
               <IconComponent 
                 size={iconSize} 
-                color="#FFFFFF"
+                color={active ? activeIconColor : iconColor}
                 strokeWidth={active ? 2.5 : 2}
               />
             </View>
@@ -70,31 +81,33 @@ export default function BottomTabBar() {
 const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
-    backgroundColor: '#2A2A2A', // Dark grey background
-    borderRadius: 20,
+    borderRadius: rp(20),
     alignItems: 'center',
     justifyContent: 'space-around',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    marginHorizontal: 16,
-    marginBottom: 8,
-    shadowColor: '#000',
+    paddingVertical: rp(10),
+    marginHorizontal: rp(16),
+    marginBottom: rp(8),
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
+    shadowRadius: rp(8),
+    elevation: 6,
+    minHeight: isSmallScreen ? rp(56) : rp(60),
+    maxHeight: rp(70),
   },
   tab: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 8,
+    paddingVertical: rp(6),
+    minWidth: 0,
+    height: '100%',
   },
   iconContainer: {
-    padding: 8,
-    borderRadius: 12,
-  },
-  iconContainerActive: {
-    backgroundColor: '#3A3A3A', // Lighter grey background for active tab
+    padding: rp(8),
+    borderRadius: rp(12),
+    minWidth: rp(40),
+    minHeight: rp(40),
+    alignItems: 'center',
+    justifyContent: 'center',
+    alignSelf: 'center',
   },
 });

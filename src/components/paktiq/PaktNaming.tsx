@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { motion } from 'motion/react';
 import { ArrowRight, ArrowLeft, Calendar } from 'lucide-react';
-import { PaktData } from '../../App';
+// Legacy web component - PaktData is defined in PaktCreationContext
 
 type PaktNamingProps = {
   currentPakt: Partial<PaktData>;

@@ -40,7 +40,7 @@ export default function ResolveNaming() {
       updatePaktData({
         name: resolveName.trim(),
         description: description.trim(),
-        deadline: deadline.toISOString(),
+        targetDate: deadline.toISOString(),
       });
       router.push('/milestone-builder');
     }
@@ -69,7 +69,12 @@ export default function ResolveNaming() {
         <Text style={[styles.subtitle, { color: colors.textSecondary }]}>{t('resolveNaming.subtitle')}</Text>
       </View>
 
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView 
+        style={styles.content} 
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
         <View style={styles.form}>
           <View style={styles.inputGroup}>
             <Text style={[styles.label, { color: colors.text }]}>{t('resolveNaming.resolveName')}</Text>
@@ -216,7 +221,10 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
+  },
+  scrollContent: {
     padding: 24,
+    paddingBottom: 40,
   },
   form: {
     gap: 24,

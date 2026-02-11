@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion } from 'motion/react';
 import { ArrowLeft, TrendingUp, Target, Calendar, Clock, Award, BarChart3 } from 'lucide-react';
-import { PaktData } from '../../App';
+// Legacy web component - PaktData is defined in PaktCreationContext
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts';
 
 type InsightsOverviewProps = {

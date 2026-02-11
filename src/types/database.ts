@@ -15,6 +15,7 @@ export interface Database {
           email: string
           full_name: string | null
           avatar_url: string | null
+          bio: string | null
           onboarding_completed: boolean
           premium: boolean
           created_at: string
@@ -25,6 +26,7 @@ export interface Database {
           email: string
           full_name?: string | null
           avatar_url?: string | null
+          bio?: string | null
           onboarding_completed?: boolean
           premium?: boolean
           created_at?: string
@@ -35,6 +37,7 @@ export interface Database {
           email?: string
           full_name?: string | null
           avatar_url?: string | null
+          bio?: string | null
           onboarding_completed?: boolean
           premium?: boolean
           created_at?: string

@@ -1,5 +1,5 @@
 import { Calendar, Clock, TrendingUp, AlertCircle } from 'lucide-react';
-import { Milestone } from '../App';
+import type { Milestone } from '../types';
 
 interface TimelineStatsProps {
   milestones: Milestone[];

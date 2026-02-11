@@ -1,4 +1,4 @@
-import { Achievement } from '../App';
+import type { Achievement } from '../types';
 import { motion } from 'motion/react';
 import { Trophy } from 'lucide-react';
 

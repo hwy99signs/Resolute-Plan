@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { X } from 'lucide-react';
-import { Resolution } from '../App';
+// Legacy web component - Resolution type not used in React Native app
+// import type { Resolve } from '../types';
 
 interface AddResolutionModalProps {
   onClose: () => void;

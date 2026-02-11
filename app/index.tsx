@@ -213,6 +213,7 @@ export default function WelcomeScreen() {
         <ScrollView 
           contentContainerStyle={styles.scrollContent} 
           showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
         >
           {/* Logo/Target Icon */}
           <Animated.View 
@@ -271,15 +272,15 @@ export default function WelcomeScreen() {
           >
             <View style={styles.statCard}>
               <Text style={styles.statValue}>10K+</Text>
-              <Text style={styles.statLabel}>{t('welcome.activeUsers')}</Text>
+              <Text style={styles.statLabel} numberOfLines={1}>{t('welcome.waitlistMembers')}</Text>
             </View>
             <View style={styles.statCard}>
-              <Text style={styles.statValue}>50K+</Text>
-              <Text style={styles.statLabel}>{t('welcome.paktsAchieved')}</Text>
+              <Text style={styles.statValue}>98%</Text>
+              <Text style={styles.statLabel} numberOfLines={1}>{t('welcome.satisfactionRate')}</Text>
             </View>
             <View style={styles.statCard}>
-              <Text style={styles.statValue}>95%</Text>
-              <Text style={styles.statLabel}>{t('welcome.successRate')}</Text>
+              <Text style={styles.statValue}>2025</Text>
+              <Text style={styles.statLabel} numberOfLines={1}>{t('welcome.launchYear')}</Text>
             </View>
           </Animated.View>
 
@@ -341,7 +342,9 @@ export default function WelcomeScreen() {
               onPress={() => router.push('/auth')}
               activeOpacity={0.8}
             >
-              <Text style={styles.primaryButtonText}>{t('welcome.startFirstResolve')}</Text>
+              <Text style={styles.primaryButtonText} numberOfLines={1} ellipsizeMode="clip">
+                Start My First Resolve
+              </Text>
               <Text style={styles.arrow}>→</Text>
             </TouchableOpacity>
             
@@ -454,7 +457,7 @@ const styles = StyleSheet.create({
     left: 40,
     width: 128,
     height: 128,
-    backgroundColor: '#FFD88A',
+    backgroundColor: 'rgba(255, 216, 138, 0.15)', // Very light golden
     borderRadius: 64,
   },
   glowBubble2: {
@@ -463,7 +466,7 @@ const styles = StyleSheet.create({
     right: 40,
     width: 160,
     height: 160,
-    backgroundColor: '#96E6B3',
+    backgroundColor: 'rgba(150, 230, 179, 0.15)', // Very light green
     borderRadius: 80,
   },
   safeArea: {
@@ -563,10 +566,9 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   scrollContent: {
-    flexGrow: 1,
     paddingHorizontal: 24,
     paddingTop: 48,
-    paddingBottom: 48,
+    paddingBottom: 80,
     alignItems: 'center',
     maxWidth: 448,
     width: '100%',
@@ -631,7 +633,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255, 255, 255, 0.1)',
     borderRadius: 16,
     paddingVertical: 16,
-    paddingHorizontal: 12,
+    paddingHorizontal: 8,
     flex: 1,
     alignItems: 'center',
     borderWidth: 1,
@@ -648,6 +650,8 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     opacity: 0.8,
     textAlign: 'center',
+    flexShrink: 1,
+    minWidth: 0,
   },
   illustrationContainer: {
     marginBottom: 48,
@@ -678,7 +682,7 @@ const styles = StyleSheet.create({
   primaryButton: {
     backgroundColor: '#FFD88A',
     paddingVertical: 16,
-    paddingHorizontal: 32,
+    paddingHorizontal: 24,
     borderRadius: 16,
     flexDirection: 'row',
     alignItems: 'center',
@@ -688,12 +692,14 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 8,
+    width: '100%',
   },
   primaryButtonText: {
     color: '#3C2B63',
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '700',
-    marginRight: 12,
+    marginRight: 8,
+    flex: 0,
   },
   arrow: {
     color: '#3C2B63',

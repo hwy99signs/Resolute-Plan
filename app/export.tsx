@@ -16,7 +16,7 @@ export default function ExportScreen() {
   const { colors } = useTheme();
   const { user } = useAuth();
   const { t } = useLanguage();
-  const { Resolves, loading: paktsLoading } = useResolves();
+  const { resolves: Resolves, loading: paktsLoading } = useResolves();
   const [selectedPakts, setSelectedPakts] = useState<Set<string>>(new Set());
   const [exporting, setExporting] = useState(false);
 
@@ -134,7 +134,7 @@ export default function ExportScreen() {
           </View>
         ) : (
           <View style={styles.paktsList}>
-            {Resolves.map((Resolve) => {
+            {Resolves.map((resolve) => {
               const isSelected = selectedPakts.has(resolve.id);
               return (
                 <TouchableOpacity

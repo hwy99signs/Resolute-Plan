@@ -77,10 +77,28 @@ export class AuthService {
 
   /**
    * Reset password request
+   * For React Native, uses deep linking with the app scheme
    */
   static async resetPassword(email: string) {
+    // For web: use EXPO_PUBLIC_SITE_URL or fallback to window.location.origin
+    // For mobile: use the app scheme for deep linking
+    let redirectTo: string;
+    
+    // Check if we're in a browser environment (not React Native)
+    // In React Native, window exists but window.location is undefined
+    const isWeb = typeof window !== 'undefined' && typeof window.location?.origin === 'string';
+    
+    if (isWeb) {
+      // Web platform - use environment variable or current origin
+      const siteUrl = process.env.EXPO_PUBLIC_SITE_URL || window.location.origin;
+      redirectTo = `${siteUrl}/reset-password`;
+    } else {
+      // Mobile platform - use app scheme
+      redirectTo = 'resolutionstracker://reset-password';
+    }
+    
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/reset-password`,
+      redirectTo,
     });
     if (error) throw error;
   }

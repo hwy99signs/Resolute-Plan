@@ -239,7 +239,7 @@ export default function SettingsScreen() {
 
         {/* Version Footer */}
         <View style={styles.footer}>
-          <Text style={dynamicStyles.footerTitle}>resolviq Pro</Text>
+          <Text style={dynamicStyles.footerTitle}>Resolute Plan pro</Text>
           <Text style={dynamicStyles.footerVersion}>Version 1.0.0</Text>
         </View>
 

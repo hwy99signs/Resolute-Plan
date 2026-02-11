@@ -16,8 +16,8 @@ BEGIN
     VALUES (
       NEW.id,
       'welcome',
-      '🎉 Welcome to resolviq!',
-      'Hi ' || user_name || '! Welcome to resolviq. We''re excited to help you achieve your goals. Start by creating your first Resolve and breaking it down into milestones. Let''s make this year your best one yet! 💪',
+      '🎉 Welcome to Resolute Plan pro!',
+      'Hi ' || user_name || '! Welcome to Resolute Plan pro. We''re excited to help you achieve your goals. Start by creating your first Resolve and breaking it down into milestones. Let''s make this year your best one yet! 💪',
       jsonb_build_object('welcome', true, 'created_at', CURRENT_TIMESTAMP)
     );
   EXCEPTION

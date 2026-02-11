@@ -2,6 +2,7 @@ import { Stack } from 'expo-router';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { useEffect, useRef } from 'react';
 import * as Notifications from 'expo-notifications';
+import * as Linking from 'expo-linking';
 import Constants from 'expo-constants';
 import { useRouter } from 'expo-router';
 import { AuthProvider, useAuth } from '../src/contexts/AuthContext';
@@ -38,20 +39,33 @@ function NotificationHandler() {
   // Hook must be called unconditionally, but it will handle Expo Go check internally
   useNotifications();
 
-  // Schedule habit notifications when user is logged in (only if not in Expo Go)
+  // Schedule habit notifications and reminders when user is logged in (only if not in Expo Go)
   useEffect(() => {
     if (isExpoGo || !user) return;
 
-    const setupHabitNotifications = async () => {
+    const setupNotifications = async () => {
       try {
+        // Request notification permissions
+        await PushNotificationService.requestPermissions();
+
+        // Register for push notifications
+        await PushNotificationService.registerForPushNotifications(user.id);
+
+        // Setup habit notifications
         const { HabitNotificationService } = await import('../src/services/habit-notification.service');
         await HabitNotificationService.setupNotificationChannels();
         await HabitNotificationService.scheduleAllHabitNotifications();
+
+        // Schedule reminder notifications
+        const { ReminderNotificationService } = await import('../src/services/reminder-notification.service');
+        await ReminderNotificationService.scheduleAllReminders(user.id);
+
+        console.log('✅ All notifications scheduled');
       } catch (error) {
-        console.error('Error setting up habit notifications:', error);
+        console.error('Error setting up notifications:', error);
       }
     };
-    setupHabitNotifications();
+    setupNotifications();
   }, [user]);
 
   // Set up notification listeners (only if not in Expo Go)
@@ -102,9 +116,100 @@ function NotificationHandler() {
   return null;
 }
 
+// Handle deep links for password reset
+function DeepLinkHandler() {
+  const router = useRouter();
+  const hasHandledDeepLink = useRef(false);
+
+  // Parse URL fragment to extract tokens
+  const parseUrlFragment = (url: string) => {
+    try {
+      const fragmentIndex = url.indexOf('#');
+      if (fragmentIndex === -1) return null;
+
+      const fragment = url.substring(fragmentIndex + 1);
+      const params = new URLSearchParams(fragment);
+
+      return {
+        access_token: params.get('access_token'),
+        refresh_token: params.get('refresh_token'),
+        type: params.get('type'),
+      };
+    } catch (e) {
+      console.error('Error parsing URL fragment:', e);
+      return null;
+    }
+  };
+
+  useEffect(() => {
+    // Check if app was opened with a deep link
+    const handleInitialURL = async () => {
+      try {
+        const url = await Linking.getInitialURL();
+        if (url && !hasHandledDeepLink.current) {
+          console.log('Initial URL:', url);
+          // Check if it's a password reset link
+          if (url.includes('reset-password') && (url.includes('#access_token') || url.includes('type=recovery'))) {
+            hasHandledDeepLink.current = true;
+
+            // Parse tokens from URL fragment
+            const tokens = parseUrlFragment(url);
+            if (tokens?.access_token) {
+              console.log('Navigating to reset-password screen with tokens');
+              // Pass tokens as query params since URL fragments get lost
+              setTimeout(() => {
+                router.replace({
+                  pathname: '/reset-password',
+                  params: {
+                    access_token: tokens.access_token,
+                    refresh_token: tokens.refresh_token || '',
+                    type: tokens.type || 'recovery',
+                  },
+                });
+              }, 100);
+            }
+          }
+        }
+      } catch (e) {
+        console.error('Error handling initial URL:', e);
+      }
+    };
+
+    handleInitialURL();
+
+    // Listen for incoming deep links while app is running
+    const subscription = Linking.addEventListener('url', ({ url }) => {
+      console.log('URL event:', url);
+      if (url.includes('reset-password') && (url.includes('#access_token') || url.includes('type=recovery'))) {
+        console.log('Navigating to reset-password screen from URL event');
+
+        // Parse tokens from URL fragment
+        const tokens = parseUrlFragment(url);
+        if (tokens?.access_token) {
+          router.replace({
+            pathname: '/reset-password',
+            params: {
+              access_token: tokens.access_token,
+              refresh_token: tokens.refresh_token || '',
+              type: tokens.type || 'recovery',
+            },
+          });
+        }
+      }
+    });
+
+    return () => {
+      subscription.remove();
+    };
+  }, [router]);
+
+  return null;
+}
+
 function AppContent() {
   return (
     <PaktCreationProvider>
+      <DeepLinkHandler />
       <NotificationHandler />
       <Stack screenOptions={{ headerShown: false }} />
     </PaktCreationProvider>

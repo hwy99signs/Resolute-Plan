@@ -151,10 +151,23 @@ export default function NotificationsFeedScreen() {
   const translateNotification = (notification: Notification) => {
     let translatedTitle = notification.title;
     let translatedMessage = notification.message;
+    
+    // Handle cases where translation keys are already in the notification
+    if (notification.title === 'notificationsFeed.paktReminder' || notification.title === 'notificationsFeed.resolveReminder') {
+      translatedTitle = t('notificationsFeed.resolveReminder');
+    }
+    if (notification.message === 'notificationsFeed.paktReminderMessage' || notification.message === 'notificationsFeed.resolveReminderMessage') {
+      // Try to extract resolve name from metadata if available
+      const resolveName = notification.metadata?.resolve_name || notification.metadata?.pakt_name || 'your Resolve';
+      const count = notification.metadata?.count || '1';
+      translatedMessage = t('notificationsFeed.resolveReminderMessage')
+        .replace('{{count}}', count.toString())
+        .replace('{{resolve}}', translateResolveName(resolveName));
+    }
 
     // Translate notification titles
     if (notification.title.includes('Daily Motivation')) {
-      translatedTitle = t('notificationsFeed.dailyMotivation');
+      translatedTitle = t('notificationsFeed.dailyMotivationLabel') || t('notificationsFeed.dailyMotivation') || 'Daily Motivation';
     } else if (notification.title.includes('Milestone Due Today')) {
       translatedTitle = t('notificationsFeed.milestoneDueToday');
     } else if (notification.title.includes('Milestone Due Tomorrow')) {
@@ -166,7 +179,7 @@ export default function NotificationsFeedScreen() {
     } else if (notification.title.includes('Milestone Achieved')) {
       translatedTitle = t('notificationsFeed.milestoneAchieved');
     } else if (notification.title.includes('Resolve Reminder')) {
-      translatedTitle = t('notificationsFeed.paktReminder');
+      translatedTitle = t('notificationsFeed.resolveReminder');
     }
 
     // Translate notification messages
@@ -177,7 +190,7 @@ export default function NotificationsFeedScreen() {
         const paktName = translateResolveName(match[2]);
         translatedMessage = t('notificationsFeed.milestoneDueTodayMessage')
           .replace('{{milestone}}', milestoneName)
-          .replace('{{Resolve}}', paktName);
+          .replace('{{resolve}}', paktName);
       }
     } else if (notification.message.includes('is due tomorrow')) {
       const match = notification.message.match(/"([^"]+)" in "([^"]+)"/);
@@ -186,7 +199,7 @@ export default function NotificationsFeedScreen() {
         const paktName = translateResolveName(match[2]);
         translatedMessage = t('notificationsFeed.milestoneDueMessage')
           .replace('{{milestone}}', milestoneName)
-          .replace('{{Resolve}}', paktName);
+          .replace('{{resolve}}', paktName);
       }
     } else if (notification.message.includes('is due in')) {
       const match = notification.message.match(/"([^"]+)" in "([^"]+)" is due in (\d+) days/);
@@ -196,7 +209,7 @@ export default function NotificationsFeedScreen() {
         const days = match[3];
         translatedMessage = t('notificationsFeed.milestoneDeadlineApproachingMessage')
           .replace('{{milestone}}', milestoneName)
-          .replace('{{Resolve}}', paktName)
+          .replace('{{resolve}}', paktName)
           .replace('{{days}}', days);
       }
     } else if (notification.message.includes('deadline for') && notification.message.includes('has passed')) {
@@ -206,7 +219,7 @@ export default function NotificationsFeedScreen() {
         const paktName = translateResolveName(match[2]);
         translatedMessage = t('notificationsFeed.milestoneMissedMessage')
           .replace('{{milestone}}', milestoneName)
-          .replace('{{Resolve}}', paktName);
+          .replace('{{resolve}}', paktName);
       }
     } else if (notification.message.includes("You've completed")) {
       const match = notification.message.match(/"([^"]+)" in "([^"]+)"/);
@@ -215,7 +228,7 @@ export default function NotificationsFeedScreen() {
         const paktName = translateResolveName(match[2]);
         translatedMessage = t('notificationsFeed.milestoneCompletedMessage')
           .replace('{{milestone}}', milestoneName)
-          .replace('{{Resolve}}', paktName);
+          .replace('{{resolve}}', paktName);
       }
     } else if (notification.message.includes('milestone to work on today') || notification.message.includes('milestones to work on today')) {
       // Handle both singular and plural
@@ -223,18 +236,18 @@ export default function NotificationsFeedScreen() {
       if (match) {
         const count = match[1];
         const paktName = translateResolveName(match[2]);
-        translatedMessage = t('notificationsFeed.paktReminderMessage')
+        translatedMessage = t('notificationsFeed.resolveReminderMessage')
           .replace('{{count}}', count)
-          .replace('{{Resolve}}', paktName);
+          .replace('{{resolve}}', paktName);
       } else {
         // Try singular form
         const match2 = notification.message.match(/You have (\d+) milestone to work on today in "([^"]+)"/);
         if (match2) {
           const count = match2[1];
           const paktName = translateResolveName(match2[2]);
-          translatedMessage = t('notificationsFeed.paktReminderMessage')
+          translatedMessage = t('notificationsFeed.resolveReminderMessage')
             .replace('{{count}}', count)
-            .replace('{{Resolve}}', paktName);
+            .replace('{{resolve}}', paktName);
         }
       }
     } else if (notification.message.includes("Don't wait for motivation")) {
@@ -249,6 +262,24 @@ export default function NotificationsFeedScreen() {
       translatedMessage = t('notificationsFeed.motivation5');
     } else if (notification.message.includes("You're building the life")) {
       translatedMessage = t('notificationsFeed.motivation6');
+    } else if (notification.message.includes("Today is a new opportunity")) {
+      translatedMessage = t('notificationsFeed.motivation7');
+    } else if (notification.message.includes("Remember why you started")) {
+      translatedMessage = t('notificationsFeed.motivation8');
+    } else if (notification.message.includes("Progress, not perfection")) {
+      translatedMessage = t('notificationsFeed.motivation9');
+    } else if (notification.message.includes("You are stronger than your excuses")) {
+      translatedMessage = t('notificationsFeed.motivation10');
+    } else if (notification.message.includes("Small progress is still progress")) {
+      translatedMessage = t('notificationsFeed.motivation11');
+    } else if (notification.message.includes("Believe in yourself")) {
+      translatedMessage = t('notificationsFeed.motivation12');
+    } else if (notification.message.includes("Consistency beats intensity")) {
+      translatedMessage = t('notificationsFeed.motivation13');
+    } else if (notification.message.includes("Your goals are within reach")) {
+      translatedMessage = t('notificationsFeed.motivation14');
+    } else if (notification.message.includes("Every milestone you complete")) {
+      translatedMessage = t('notificationsFeed.motivation15');
     }
 
     return { title: translatedTitle, message: translatedMessage };

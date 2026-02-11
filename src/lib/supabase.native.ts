@@ -19,6 +19,7 @@ export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
     autoRefreshToken: true,
     detectSessionInUrl: false, // Mobile doesn't use URLs for auth
     storage: undefined, // Expo will handle storage automatically
+    storageKey: 'supabase.auth.token', // Explicit storage key for session persistence
   },
 });
 

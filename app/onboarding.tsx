@@ -31,7 +31,7 @@ const slides = [
   {
     id: 4,
     title: "Let's Get Started!",
-    description: 'Join thousands of achievers who are making their commitments count with resolviq.',
+    description: 'Join thousands of achievers who are making their commitments count with Resolute Plan pro.',
     icon: '🚀',
     color: '#FF6B6B',
   },
